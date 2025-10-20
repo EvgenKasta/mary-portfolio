@@ -10,6 +10,7 @@
     font-family: "Didot", serif;
     background-color: #111;
     color: #fff;
+    touch-action: pan-y; /* разрешает вертикальный скролл, нужен для свайпа */
   }
 
   .header {
@@ -67,32 +68,17 @@
   }
 
   .artwork-slider {
-    position: relative;
     max-width: 90%;
     margin: 0 auto;
+    position: relative;
   }
 
   .artwork-slider img {
     width: 100%;
     height: auto;
     border-radius: 8px;
+    touch-action: pan-y;
   }
-
-  .slider-button {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: #444;
-    color: #fff;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 50%;
-    font-size: 18px;
-  }
-
-  .prev { left: 10px; }
-  .next { right: 10px; }
 
   .artwork-page .description {
     margin-top: 15px;
@@ -149,12 +135,10 @@
   <button class="about-button" onclick="openAbout()">Обо мне</button>
 </div>
 
-<!-- Страница отдельной картины со слайдером -->
+<!-- Страница отдельной картины со слайдером свайпом -->
 <div id="artwork-screen" class="artwork-page">
   <div class="artwork-slider">
-    <button class="slider-button prev" onclick="prevSlide()">‹</button>
     <img id="artwork-img" src="" alt="Картина">
-    <button class="slider-button next" onclick="nextSlide()">›</button>
   </div>
   <div class="description" id="artwork-desc"></div>
   <div class="price" id="artwork-price"></div>
@@ -171,15 +155,16 @@
 </div>
 
 <script>
-  // Разворачиваем приложение на весь экран
+  // Полноэкранный режим
   window.addEventListener("DOMContentLoaded", () => {
     if (window.Telegram && window.Telegram.WebApp) {
       const webApp = window.Telegram.WebApp;
+      webApp.ready();
       webApp.expand();
     }
   });
 
-  // данные картин
+  // Данные картин
   const artworks = [
     {src: "/images/1.JPG", desc: "Описание работы 1", price: "Цена: 100$"},
     {src: "/images/2.JPG", desc: "Описание работы 2", price: "Цена: 120$"},
@@ -188,6 +173,21 @@
   ];
 
   let currentIndex = 0;
+
+  const sliderImg = document.getElementById("artwork-img");
+  let startX = 0;
+
+  sliderImg.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+  });
+
+  sliderImg.addEventListener("touchend", e => {
+    const endX = e.changedTouches[0].clientX;
+    const diff = endX - startX;
+
+    if (diff > 50) prevSlide(); // свайп вправо
+    if (diff < -50) nextSlide(); // свайп влево
+  });
 
   function openArtwork(index) {
     document.getElementById("main-screen").style.display = "none";
@@ -198,7 +198,7 @@
 
   function showSlide(index) {
     const art = artworks[index];
-    document.getElementById("artwork-img").src = art.src;
+    sliderImg.src = art.src;
     document.getElementById("artwork-desc").innerText = art.desc;
     document.getElementById("artwork-price").innerText = art.price;
   }
