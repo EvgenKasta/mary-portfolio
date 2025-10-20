@@ -136,6 +136,7 @@
   <div class="header">
     <h1>Мария Мощенкова</h1>
     <h2>Художник иллюстратор</h2>
+    <p>дальше картины</p>
   </div>
 
   <div class="gallery">
@@ -164,12 +165,11 @@
 <div id="about-screen" class="about-page">
   <img src="/images/me.JPG" alt="Мария Мощенкова">
   <div class="bio">
-    Я художник Мария, 10 лет в искусстве, пишу картины на заказ.
+    Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.
   </div>
   <button class="back-button" onclick="goBackAbout()">Назад</button>
 </div>
 
-<script>
 <script>
   // Разворачиваем приложение на весь экран
   window.addEventListener("DOMContentLoaded", () => {
@@ -178,6 +178,7 @@
       webApp.expand();
     }
   });
+
   // данные картин
   const artworks = [
     {src: "/images/1.JPG", desc: "Описание работы 1", price: "Цена: 100$"},
