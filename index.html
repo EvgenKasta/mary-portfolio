@@ -118,7 +118,6 @@
     margin-top: 15px;
     font-size: 16px;
   }
-
 </style>
 </head>
 <body>
@@ -132,16 +131,16 @@
   </div>
 
   <div class="gallery">
-    <img src="/images/1.JPG" alt="Картина 1" onclick="openArtwork(1)">
-    <img src="/images/2.JPG" alt="Картина 2" onclick="openArtwork(2)">
-    <img src="/images/3.JPG" alt="Картина 3" onclick="openArtwork(3)">
-    <img src="/images/4.jpeg" alt="Картина 4" onclick="openArtwork(4)">
+    <img src="/images/1_main.JPG" alt="Картина 1" onclick="openArtwork(0)">
+    <img src="/images/2_main.JPG" alt="Картина 2" onclick="openArtwork(1)">
+    <img src="/images/3_main.JPG" alt="Картина 3" onclick="openArtwork(2)">
+    <img src="/images/4_main.JPG" alt="Картина 4" onclick="openArtwork(3)">
   </div>
 
   <button class="about-button" onclick="openAbout()">Обо мне</button>
 </div>
 
-<!-- Страница отдельной картины со свайп-слайдером -->
+<!-- Страница отдельной картины с 4 экспозициями -->
 <div id="artwork-screen" class="artwork-page">
   <div class="artwork-slider">
     <img id="artwork-img" src="" alt="Картина">
@@ -166,22 +165,36 @@
     if (window.Telegram && window.Telegram.WebApp) {
       const webApp = window.Telegram.WebApp;
       webApp.ready();
-      // Небольшая задержка, чтобы expand точно сработал
-      setTimeout(() => {
-        webApp.expand();
-      }, 200);
+      setTimeout(() => { webApp.expand(); }, 200);
     }
   });
 
-  // Данные картин
+  // Данные картин с 4 экспозициями
   const artworks = [
-    {src: "/images/1.JPG", desc: "Описание работы 1", price: "Цена: 100$"},
-    {src: "/images/2.JPG", desc: "Описание работы 2", price: "Цена: 120$"},
-    {src: "/images/3.JPG", desc: "Описание работы 3", price: "Цена: 90$"},
-    {src: "/images/4.jpeg", desc: "Описание работы 4", price: "Цена: 150$"},
+    {
+      slides: ["/images/1_1.JPG","/images/1_2.JPG","/images/1_3.JPG","/images/1_4.JPG"],
+      desc: "Описание работы 1",
+      price: "Цена: 100$"
+    },
+    {
+      slides: ["/images/2_1.JPG","/images/2_2.JPG","/images/2_3.JPG","/images/2_4.JPG"],
+      desc: "Описание работы 2",
+      price: "Цена: 120$"
+    },
+    {
+      slides: ["/images/3_1.JPG","/images/3_2.JPG","/images/3_3.JPG","/images/3_4.JPG"],
+      desc: "Описание работы 3",
+      price: "Цена: 90$"
+    },
+    {
+      slides: ["/images/4_1.JPG","/images/4_2.JPG","/images/4_3.JPG","/images/4_4.JPG"],
+      desc: "Описание работы 4",
+      price: "Цена: 150$"
+    }
   ];
 
-  let currentIndex = 0;
+  let currentArtIndex = 0;
+  let currentSlideIndex = 0;
   const sliderImg = document.getElementById("artwork-img");
   let startX = 0;
 
@@ -198,26 +211,29 @@
 
   function openArtwork(index) {
     document.getElementById("main-screen").style.display = "none";
-    currentIndex = index - 1;
-    showSlide(currentIndex);
+    currentArtIndex = index;
+    currentSlideIndex = 0;
+    showSlide();
     document.getElementById("artwork-screen").style.display = "block";
   }
 
-  function showSlide(index) {
-    const art = artworks[index];
-    sliderImg.src = art.src;
+  function showSlide() {
+    const art = artworks[currentArtIndex];
+    sliderImg.src = art.slides[currentSlideIndex];
     document.getElementById("artwork-desc").innerText = art.desc;
     document.getElementById("artwork-price").innerText = art.price;
   }
 
   function prevSlide() {
-    currentIndex = (currentIndex - 1 + artworks.length) % artworks.length;
-    showSlide(currentIndex);
+    const art = artworks[currentArtIndex];
+    currentSlideIndex = (currentSlideIndex - 1 + art.slides.length) % art.slides.length;
+    showSlide();
   }
 
   function nextSlide() {
-    currentIndex = (currentIndex + 1) % artworks.length;
-    showSlide(currentIndex);
+    const art = artworks[currentArtIndex];
+    currentSlideIndex = (currentSlideIndex + 1) % art.slides.length;
+    showSlide();
   }
 
   function goBack() {
