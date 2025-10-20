@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Мария Мощенкова</title>
 <style>
-  html, body {
+html, body {
     height: 100%;
     margin: 0;
     padding: 0;
@@ -14,155 +14,32 @@
     color: #fff;
     overflow-x: hidden;
     touch-action: pan-y;
-  }
-
-  .header {
-    text-align: center;
-    padding: 20px;
-  }
-
-  .header h1 {
-    margin: 0;
-    font-size: 28px;
-  }
-
-  .header h2 {
-    margin: 5px 0 20px 0;
-    font-size: 18px;
-    font-weight: normal;
-  }
-
-  .gallery {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    padding-bottom: 20px;
-  }
-
-  .gallery img {
-    max-width: 80%;
-    height: auto;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s;
-  }
-
-  .gallery img:hover {
-    transform: scale(1.02);
-  }
-
-  .about-button {
-    display: block;
-    margin: 20px auto;
-    padding: 10px 20px;
-    font-size: 14px;
-    cursor: pointer;
-    border: none;
-    border-radius: 6px;
-    background-color: #444;
-    color: #fff;
-  }
-
-  .artwork-page, .about-page {
-    display: none;
-    text-align: center;
-    padding: 20px;
-    min-height: 100vh;
-    box-sizing: border-box;
-    position: relative;
-  }
-
-  .artwork-slider {
-    max-width: 90%;
-    margin: 0 auto;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .artwork-slider img {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
-    touch-action: pan-y;
-    transition: transform 0.5s ease;
-  }
-
-  .slide-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 32px;
-    color: #000;
-    background-color: rgba(255,255,255,0.1);
-    border-radius: 50%;
-    padding: 8px;
-    cursor: pointer;
-    user-select: none;
-    z-index: 10;
-  }
-
-  .slide-arrow.left { left: 10px; }
-  .slide-arrow.right { right: 10px; }
-
-  .slide-dots {
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
-    gap: 6px;
-  }
-
-  .slide-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: rgba(255,255,255,0.3);
-    transition: background-color 0.3s;
-  }
-
-  .slide-dot.active {
-    background-color: #fff;
-  }
-
-  .artwork-page .description {
-    margin-top: 15px;
-    font-size: 16px;
-  }
-
-  .artwork-page .price {
-    margin-top: 5px;
-    font-size: 18px;
-    font-weight: bold;
-  }
-
-  .back-button {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    padding: 10px 20px;
-    font-size: 14px;
-    cursor: pointer;
-    border: 2px solid #fff;
-    border-radius: 6px;
-    background-color: #111;
-    color: #fff;
-  }
-
-  .about-page img {
-    max-width: 90%;
-    height: auto;
-    border-radius: 8px;
-  }
-
-  .about-page .bio {
-    margin-top: 15px;
-    font-size: 16px;
-  }
+}
+.header { text-align: center; padding: 20px; }
+.header h1 { margin:0; font-size:28px; }
+.header h2 { margin:5px 0 20px 0; font-size:18px; font-weight:normal; }
+.gallery { display:flex; flex-direction:column; align-items:center; gap:20px; padding-bottom:20px; }
+.gallery img { max-width:80%; height:auto; border-radius:8px; cursor:pointer; transition: transform 0.2s; }
+.gallery img:hover { transform: scale(1.02); }
+.about-button { display:block; margin:20px auto; padding:10px 20px; font-size:14px; cursor:pointer; border:none; border-radius:6px; background-color:#444; color:#fff; }
+.artwork-page, .about-page { display:none; text-align:center; padding:20px; min-height:100vh; box-sizing:border-box; position:relative; }
+.artwork-slider { max-width:90%; margin:0 auto; position:relative; overflow:hidden; }
+.artwork-slider img { width:100%; height:auto; border-radius:8px; touch-action: pan-y; transition: transform 0.5s ease; }
+.slide-arrow { position:absolute; top:50%; transform:translateY(-50%); font-size:32px; color:#000; background-color:rgba(255,255,255,0.1); border-radius:50%; padding:8px; cursor:pointer; user-select:none; z-index:10; }
+.slide-arrow.left { left:10px; }
+.slide-arrow.right { right:10px; }
+.slide-dots { display:flex; justify-content:center; margin-top:10px; gap:6px; }
+.slide-dot { width:10px; height:10px; border-radius:50%; background-color:rgba(255,255,255,0.3); transition: background-color 0.3s; }
+.slide-dot.active { background-color:#fff; }
+.artwork-page .description { margin-top:15px; font-size:16px; }
+.artwork-page .price { margin-top:5px; font-size:18px; font-weight:bold; }
+.back-button { position:absolute; bottom:20px; left:20px; padding:10px 20px; font-size:14px; cursor:pointer; border:2px solid #fff; border-radius:6px; background-color:#111; color:#fff; }
+.about-page img { max-width:90%; height:auto; border-radius:8px; }
+.about-page .bio { margin-top:15px; font-size:16px; }
 </style>
 </head>
 <body>
 
-<!-- Главный экран -->
 <div id="main-screen">
   <div class="header">
     <h1>Мария Мощенкова</h1>
@@ -179,132 +56,82 @@
   <button class="about-button" onclick="openAbout()">Обо мне</button>
 </div>
 
-<!-- Страница отдельной картины с 4 экспозициями -->
 <div id="artwork-screen" class="artwork-page">
   <div class="artwork-slider">
     <img id="artwork-img" src="" alt="Картина">
     <div class="slide-arrow left" onclick="prevSlide()">&#10094;</div>
     <div class="slide-arrow right" onclick="nextSlide()">&#10095;</div>
   </div>
-
   <div class="slide-dots" id="slide-dots"></div>
-
   <div class="description" id="artwork-desc"></div>
   <div class="price" id="artwork-price"></div>
   <button class="back-button" onclick="goBack()">Назад</button>
 </div>
 
-<!-- Страница Обо мне -->
 <div id="about-screen" class="about-page">
   <img src="/images/me.JPG" alt="Мария Мощенкова">
-  <div class="bio">
-    Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.
-  </div>
+  <div class="bio">Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.</div>
   <button class="back-button" onclick="goBackAbout()">Назад</button>
 </div>
 
 <script>
-  // Максимальное поднятие Web App в Telegram
-  window.addEventListener("load", () => {
-    if (window.Telegram && window.Telegram.WebApp) {
-      const webApp = window.Telegram.WebApp;
-      webApp.ready();
-      setTimeout(() => { webApp.expand(); }, 200);
+let webAppLoaded = false;
+function initTelegramWebApp() {
+    if (window.Telegram && window.Telegram.WebApp && !webAppLoaded) {
+        webAppLoaded = true;
+        const webApp = window.Telegram.WebApp;
+        webApp.ready();
+        webApp.expand(); // разворачиваем на весь экран
+        webApp.MainButton.hide(); // скрываем основную кнопку, если нужна
     }
+}
+window.addEventListener("load", initTelegramWebApp);
+
+// Картины с 4 экспозициями
+const artworks = [
+  { slides:["/images/1_1.JPG","/images/1_2.JPG","/images/1_3.JPG","/images/1_4.JPG"], desc:"Описание работы 1", price:"Цена: 100$" },
+  { slides:["/images/2_1.JPG","/images/2_2.JPG","/images/2_3.JPG","/images/2_4.JPG"], desc:"Описание работы 2", price:"Цена: 120$" },
+  { slides:["/images/3_1.JPG","/images/3_2.JPG","/images/3_3.JPG","/images/3_4.JPG"], desc:"Описание работы 3", price:"Цена: 90$" },
+  { slides:["/images/4_1.JPG","/images/4_2.JPG","/images/4_3.JPG","/images/4_4.JPG"], desc:"Описание работы 4", price:"Цена: 150$" }
+];
+
+let currentArtIndex=0, currentSlideIndex=0, startX=0;
+const sliderImg=document.getElementById("artwork-img");
+const dotsContainer=document.getElementById("slide-dots");
+
+function renderDots(){
+  dotsContainer.innerHTML='';
+  artworks[currentArtIndex].slides.forEach((_, idx)=>{
+    const dot=document.createElement('div');
+    dot.className='slide-dot'+(idx===currentSlideIndex?' active':'');
+    dotsContainer.appendChild(dot);
   });
+}
 
-  // Данные картин с 4 экспозициями
-  const artworks = [
-    {
-      slides: ["/images/1_1.JPG","/images/1_2.JPG","/images/1_3.JPG","/images/1_4.JPG"],
-      desc: "Описание работы 1",
-      price: "Цена: 100$"
-    },
-    {
-      slides: ["/images/2_1.JPG","/images/2_2.JPG","/images/2_3.JPG","/images/2_4.JPG"],
-      desc: "Описание работы 2",
-      price: "Цена: 120$"
-    },
-    {
-      slides: ["/images/3_1.JPG","/images/3_2.JPG","/images/3_3.JPG","/images/3_4.JPG"],
-      desc: "Описание работы 3",
-      price: "Цена: 90$"
-    },
-    {
-      slides: ["/images/4_1.JPG","/images/4_2.JPG","/images/4_3.JPG","/images/4_4.JPG"],
-      desc: "Описание работы 4",
-      price: "Цена: 150$"
-    }
-  ];
+function openArtwork(index){
+  document.getElementById("main-screen").style.display="none";
+  currentArtIndex=index; currentSlideIndex=0;
+  showSlide();
+  document.getElementById("artwork-screen").style.display="block";
+}
 
-  let currentArtIndex = 0;
-  let currentSlideIndex = 0;
-  const sliderImg = document.getElementById("artwork-img");
-  const dotsContainer = document.getElementById("slide-dots");
-  let startX = 0;
+function showSlide(){
+  const art=artworks[currentArtIndex];
+  sliderImg.src=art.slides[currentSlideIndex];
+  document.getElementById("artwork-desc").innerText=art.desc;
+  document.getElementById("artwork-price").innerText=art.price;
+  renderDots();
+}
 
-  function renderDots() {
-    dotsContainer.innerHTML = '';
-    const art = artworks[currentArtIndex];
-    art.slides.forEach((_, idx) => {
-      const dot = document.createElement('div');
-      dot.className = 'slide-dot' + (idx === currentSlideIndex ? ' active' : '');
-      dotsContainer.appendChild(dot);
-    });
-  }
+function prevSlide(){ const art=artworks[currentArtIndex]; currentSlideIndex=(currentSlideIndex-1+art.slides.length)%art.slides.length; showSlide(); }
+function nextSlide(){ const art=artworks[currentArtIndex]; currentSlideIndex=(currentSlideIndex+1)%art.slides.length; showSlide(); }
 
-  function openArtwork(index) {
-    document.getElementById("main-screen").style.display = "none";
-    currentArtIndex = index;
-    currentSlideIndex = 0;
-    showSlide();
-    document.getElementById("artwork-screen").style.display = "block";
-  }
+sliderImg.addEventListener("touchstart", e=>{ startX=e.touches[0].clientX; });
+sliderImg.addEventListener("touchend", e=>{ const diff=e.changedTouches[0].clientX-startX; if(diff>50) prevSlide(); if(diff<-50) nextSlide(); });
 
-  function showSlide() {
-    const art = artworks[currentArtIndex];
-    sliderImg.src = art.slides[currentSlideIndex];
-    document.getElementById("artwork-desc").innerText = art.desc;
-    document.getElementById("artwork-price").innerText = art.price;
-    renderDots();
-  }
-
-  function prevSlide() {
-    const art = artworks[currentArtIndex];
-    currentSlideIndex = (currentSlideIndex - 1 + art.slides.length) % art.slides.length;
-    showSlide();
-  }
-
-  function nextSlide() {
-    const art = artworks[currentArtIndex];
-    currentSlideIndex = (currentSlideIndex + 1) % art.slides.length;
-    showSlide();
-  }
-
-  // Свайп пальцем
-  sliderImg.addEventListener("touchstart", e => { startX = e.touches[0].clientX; });
-  sliderImg.addEventListener("touchend", e => {
-    const endX = e.changedTouches[0].clientX;
-    const diff = endX - startX;
-    if (diff > 50) prevSlide();
-    if (diff < -50) nextSlide();
-  });
-
-  function goBack() {
-    document.getElementById("artwork-screen").style.display = "none";
-    document.getElementById("main-screen").style.display = "block";
-  }
-
-  function openAbout() {
-    document.getElementById("main-screen").style.display = "none";
-    document.getElementById("about-screen").style.display = "block";
-  }
-
-  function goBackAbout() {
-    document.getElementById("about-screen").style.display = "none";
-    document.getElementById("main-screen").style.display = "block";
-  }
-
+function goBack(){ document.getElementById("artwork-screen").style.display="none"; document.getElementById("main-screen").style.display="block"; }
+function openAbout(){ document.getElementById("main-screen").style.display="none"; document.getElementById("about-screen").style.display="block"; }
+function goBackAbout(){ document.getElementById("about-screen").style.display="none"; document.getElementById("main-screen").style.display="block"; }
 </script>
 </body>
 </html>
