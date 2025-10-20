@@ -6,30 +6,23 @@
 <title>Мария Мощенкова</title>
 <style>
   html, body {
-    height: 100%;
     margin: 0;
     padding: 0;
     font-family: "Didot", serif;
     color: #fff;
+    background-color: #111;
     overflow-x: hidden;
     touch-action: pan-y;
-    background-color: #111; /* фон остальных страниц */
   }
 
-  /* Главный экран с фоном */
   #main-screen {
-    min-height: 100vh;
-    background-image: url('/images/main.jpg'); /* твой фон */
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center top;
     text-align: center;
-    padding-bottom: 20px;
+    padding: 0;
   }
 
   .header {
-    padding-top: 20px; 
-    padding-bottom: 20px;
+    padding-top: 20px;
+    margin: 0;
   }
 
   .header h1 {
@@ -47,7 +40,18 @@
     width: 100%;
     height: 2px;
     background-color: #fff;
-    margin: 10px 0 0 0;
+    margin-top: 10px;
+  }
+
+  /* Блок с фоном между линиями */
+  .background-block {
+    background-image: url('/images/main.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin: 10px 0; /* расстояние от линий */
+    padding: 20px 0;
+    border-radius: 8px; /* скругление при желании */
   }
 
   .gallery {
@@ -55,16 +59,15 @@
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    padding-bottom: 20px;
   }
 
   .gallery img {
     max-width: 80%;
     height: auto;
     border-radius: 8px;
+    border: 3px solid #fff;
     cursor: pointer;
     transition: transform 0.2s;
-    border: 3px solid #fff; /* рамка */
   }
 
   .gallery img:hover {
@@ -107,7 +110,7 @@
     min-height: 100vh;
     box-sizing: border-box;
     position: relative;
-    background-color: #111; /* фон остальных страниц */
+    background-color: #111;
   }
 
   .artwork-slider {
@@ -199,7 +202,6 @@
 </head>
 <body>
 
-<!-- Главный экран -->
 <div id="main-screen">
   <div class="header">
     <h1>Мария Мощенкова</h1>
@@ -207,11 +209,13 @@
     <div class="header-bar"></div>
   </div>
 
-  <div class="gallery">
-    <img src="/images/1.JPG" alt="Картина 1" onclick="openArtwork(0)">
-    <img src="/images/2.JPG" alt="Картина 2" onclick="openArtwork(1)">
-    <img src="/images/3.JPG" alt="Картина 3" onclick="openArtwork(2)">
-    <img src="/images/4.JPG" alt="Картина 4" onclick="openArtwork(3)">
+  <div class="background-block">
+    <div class="gallery">
+      <img src="/images/1.JPG" alt="Картина 1" onclick="openArtwork(0)">
+      <img src="/images/2.JPG" alt="Картина 2" onclick="openArtwork(1)">
+      <img src="/images/3.JPG" alt="Картина 3" onclick="openArtwork(2)">
+      <img src="/images/4.JPG" alt="Картина 4" onclick="openArtwork(3)">
+    </div>
   </div>
 
   <button class="about-button" onclick="openAbout()">Обо мне</button>
