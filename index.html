@@ -170,6 +170,14 @@
 </div>
 
 <script>
+<script>
+  // Разворачиваем приложение на весь экран
+  window.addEventListener("DOMContentLoaded", () => {
+    if (window.Telegram && window.Telegram.WebApp) {
+      const webApp = window.Telegram.WebApp;
+      webApp.expand();
+    }
+  });
   // данные картин
   const artworks = [
     {src: "/images/1.JPG", desc: "Описание работы 1", price: "Цена: 100$"},
