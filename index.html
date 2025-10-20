@@ -7,7 +7,7 @@
 <style>
   body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: "Didot", serif;
     background-color: #111;
     color: #fff;
   }
@@ -37,7 +37,7 @@
   }
 
   .gallery img {
-    max-width: 90%;
+    max-width: 45%; /* уменьшили в 2 раза */
     height: auto;
     border-radius: 8px;
     cursor: pointer;
@@ -48,20 +48,53 @@
     transform: scale(1.02);
   }
 
+  .about-button {
+    display: block;
+    margin: 20px auto; /* по центру */
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    background-color: #444;
+    color: #fff;
+  }
+
   .artwork-page, .about-page {
     display: none;
     text-align: center;
     padding: 20px;
   }
 
-  .artwork-page img, .about-page img {
+  .artwork-slider {
+    position: relative;
     max-width: 90%;
+    margin: 0 auto;
+  }
+
+  .artwork-slider img {
+    width: 100%;
     height: auto;
     border-radius: 8px;
   }
 
-  .artwork-page .description,
-  .about-page .bio {
+  .slider-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #444;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 18px;
+  }
+
+  .prev { left: 10px; }
+  .next { right: 10px; }
+
+  .artwork-page .description {
     margin-top: 15px;
     font-size: 16px;
   }
@@ -72,7 +105,7 @@
     font-weight: bold;
   }
 
-  .back-button, .about-button {
+  .back-button {
     margin-top: 20px;
     padding: 10px 20px;
     font-size: 14px;
@@ -81,6 +114,17 @@
     border-radius: 6px;
     background-color: #444;
     color: #fff;
+  }
+
+  .about-page img {
+    max-width: 90%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  .about-page .bio {
+    margin-top: 15px;
+    font-size: 16px;
   }
 
 </style>
@@ -92,7 +136,6 @@
   <div class="header">
     <h1>Мария Мощенкова</h1>
     <h2>Художник иллюстратор</h2>
-    <p>дальше картины</p>
   </div>
 
   <div class="gallery">
@@ -105,9 +148,13 @@
   <button class="about-button" onclick="openAbout()">Обо мне</button>
 </div>
 
-<!-- Страница отдельной картины -->
+<!-- Страница отдельной картины со слайдером -->
 <div id="artwork-screen" class="artwork-page">
-  <img id="artwork-img" src="" alt="Картина">
+  <div class="artwork-slider">
+    <button class="slider-button prev" onclick="prevSlide()">‹</button>
+    <img id="artwork-img" src="" alt="Картина">
+    <button class="slider-button next" onclick="nextSlide()">›</button>
+  </div>
   <div class="description" id="artwork-desc"></div>
   <div class="price" id="artwork-price"></div>
   <button class="back-button" onclick="goBack()">Назад</button>
@@ -117,7 +164,7 @@
 <div id="about-screen" class="about-page">
   <img src="/images/me.JPG" alt="Мария Мощенкова">
   <div class="bio">
-    Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.
+    Я художник Мария, 10 лет в искусстве, пишу картины на заказ.
   </div>
   <button class="back-button" onclick="goBackAbout()">Назад</button>
 </div>
@@ -131,13 +178,30 @@
     {src: "/images/4.jpeg", desc: "Описание работы 4", price: "Цена: 150$"},
   ];
 
+  let currentIndex = 0;
+
   function openArtwork(index) {
     document.getElementById("main-screen").style.display = "none";
-    const art = artworks[index - 1];
+    currentIndex = index - 1;
+    showSlide(currentIndex);
+    document.getElementById("artwork-screen").style.display = "block";
+  }
+
+  function showSlide(index) {
+    const art = artworks[index];
     document.getElementById("artwork-img").src = art.src;
     document.getElementById("artwork-desc").innerText = art.desc;
     document.getElementById("artwork-price").innerText = art.price;
-    document.getElementById("artwork-screen").style.display = "block";
+  }
+
+  function prevSlide() {
+    currentIndex = (currentIndex - 1 + artworks.length) % artworks.length;
+    showSlide(currentIndex);
+  }
+
+  function nextSlide() {
+    currentIndex = (currentIndex + 1) % artworks.length;
+    showSlide(currentIndex);
   }
 
   function goBack() {
