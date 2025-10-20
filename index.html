@@ -10,7 +10,7 @@
     font-family: "Didot", serif;
     background-color: #111;
     color: #fff;
-    touch-action: pan-y; /* разрешает вертикальный скролл, нужен для свайпа */
+    touch-action: pan-y;
   }
 
   .header {
@@ -38,7 +38,7 @@
   }
 
   .gallery img {
-    max-width: 45%; /* уменьшили в 2 раза */
+    max-width: 45%;
     height: auto;
     border-radius: 8px;
     cursor: pointer;
@@ -51,7 +51,7 @@
 
   .about-button {
     display: block;
-    margin: 20px auto; /* по центру */
+    margin: 20px auto;
     padding: 10px 20px;
     font-size: 14px;
     cursor: pointer;
@@ -71,6 +71,7 @@
     max-width: 90%;
     margin: 0 auto;
     position: relative;
+    overflow: hidden;
   }
 
   .artwork-slider img {
@@ -78,6 +79,7 @@
     height: auto;
     border-radius: 8px;
     touch-action: pan-y;
+    transition: transform 0.3s ease;
   }
 
   .artwork-page .description {
@@ -112,7 +114,6 @@
     margin-top: 15px;
     font-size: 16px;
   }
-
 </style>
 </head>
 <body>
@@ -135,7 +136,7 @@
   <button class="about-button" onclick="openAbout()">Обо мне</button>
 </div>
 
-<!-- Страница отдельной картины со слайдером свайпом -->
+<!-- Страница отдельной картины со свайп-слайдером -->
 <div id="artwork-screen" class="artwork-page">
   <div class="artwork-slider">
     <img id="artwork-img" src="" alt="Картина">
@@ -155,8 +156,8 @@
 </div>
 
 <script>
-  // Полноэкранный режим
-  window.addEventListener("DOMContentLoaded", () => {
+  // Полноэкранное открытие в Telegram
+  window.addEventListener("load", () => {
     if (window.Telegram && window.Telegram.WebApp) {
       const webApp = window.Telegram.WebApp;
       webApp.ready();
@@ -173,7 +174,6 @@
   ];
 
   let currentIndex = 0;
-
   const sliderImg = document.getElementById("artwork-img");
   let startX = 0;
 
@@ -185,8 +185,8 @@
     const endX = e.changedTouches[0].clientX;
     const diff = endX - startX;
 
-    if (diff > 50) prevSlide(); // свайп вправо
-    if (diff < -50) nextSlide(); // свайп влево
+    if (diff > 50) prevSlide();
+    if (diff < -50) nextSlide();
   });
 
   function openArtwork(index) {
