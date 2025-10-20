@@ -9,16 +9,26 @@
     height: 100%;
     margin: 0;
     padding: 0;
-    background-color: #111;
     font-family: "Didot", serif;
     color: #fff;
     overflow-x: hidden;
     touch-action: pan-y;
+    background-color: #111; /* фон остальных страниц */
+  }
+
+  /* Главный экран с фоном */
+  #main-screen {
+    min-height: 100vh;
+    background-image: url('/images/main.jpg'); /* твой фон */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center top;
+    text-align: center;
+    padding-bottom: 20px;
   }
 
   .header {
-    text-align: center;
-    padding-top: 20px; /* увеличен отступ сверху */
+    padding-top: 20px; 
     padding-bottom: 20px;
   }
 
@@ -33,7 +43,6 @@
     font-weight: normal;
   }
 
-  /* полоска под текстом "Художник иллюстратор" */
   .header-bar {
     width: 100%;
     height: 2px;
@@ -55,7 +64,7 @@
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.2s;
-    border: 3px solid #fff; /* рамка для картинок */
+    border: 3px solid #fff; /* рамка */
   }
 
   .gallery img:hover {
@@ -98,6 +107,7 @@
     min-height: 100vh;
     box-sizing: border-box;
     position: relative;
+    background-color: #111; /* фон остальных страниц */
   }
 
   .artwork-slider {
@@ -194,7 +204,7 @@
   <div class="header">
     <h1>Мария Мощенкова</h1>
     <h2>Художник иллюстратор</h2>
-    <div class="header-bar"></div> <!-- полоска под текстом -->
+    <div class="header-bar"></div>
   </div>
 
   <div class="gallery">
