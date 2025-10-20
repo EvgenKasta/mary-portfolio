@@ -12,6 +12,7 @@
     background-color: #111;
     font-family: "Didot", serif;
     color: #fff;
+    overflow-x: hidden;
     touch-action: pan-y;
   }
 
@@ -40,7 +41,7 @@
   }
 
   .gallery img {
-    max-width: 80%;
+    max-width: 45%;
     height: auto;
     border-radius: 8px;
     cursor: pointer;
@@ -69,6 +70,7 @@
     padding: 20px;
     min-height: 100vh;
     box-sizing: border-box;
+    position: relative;
   }
 
   .artwork-slider {
@@ -83,7 +85,43 @@
     height: auto;
     border-radius: 8px;
     touch-action: pan-y;
-    transition: transform 0.3s ease;
+    transition: transform 0.5s ease;
+  }
+
+  .slide-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 32px;
+    color: #000;
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    padding: 8px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 10;
+  }
+
+  .slide-arrow.left { left: 10px; }
+  .slide-arrow.right { right: 10px; }
+
+  .slide-dots {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    gap: 6px;
+  }
+
+  .slide-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.3);
+    transition: background-color 0.3s;
+  }
+
+  .slide-dot.active {
+    background-color: #fff;
   }
 
   .artwork-page .description {
@@ -98,13 +136,15 @@
   }
 
   .back-button {
-    margin-top: 20px;
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
     padding: 10px 20px;
     font-size: 14px;
     cursor: pointer;
-    border: none;
+    border: 2px solid #fff;
     border-radius: 6px;
-    background-color: #444;
+    background-color: #111;
     color: #fff;
   }
 
@@ -127,7 +167,6 @@
   <div class="header">
     <h1>Мария Мощенкова</h1>
     <h2>Художник иллюстратор</h2>
-    <p>дальше картины</p>
   </div>
 
   <div class="gallery">
@@ -144,7 +183,12 @@
 <div id="artwork-screen" class="artwork-page">
   <div class="artwork-slider">
     <img id="artwork-img" src="" alt="Картина">
+    <div class="slide-arrow left" onclick="prevSlide()">&#10094;</div>
+    <div class="slide-arrow right" onclick="nextSlide()">&#10095;</div>
   </div>
+
+  <div class="slide-dots" id="slide-dots"></div>
+
   <div class="description" id="artwork-desc"></div>
   <div class="price" id="artwork-price"></div>
   <button class="back-button" onclick="goBack()">Назад</button>
@@ -196,18 +240,18 @@
   let currentArtIndex = 0;
   let currentSlideIndex = 0;
   const sliderImg = document.getElementById("artwork-img");
+  const dotsContainer = document.getElementById("slide-dots");
   let startX = 0;
 
-  sliderImg.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
-  });
-
-  sliderImg.addEventListener("touchend", e => {
-    const endX = e.changedTouches[0].clientX;
-    const diff = endX - startX;
-    if (diff > 50) prevSlide();
-    if (diff < -50) nextSlide();
-  });
+  function renderDots() {
+    dotsContainer.innerHTML = '';
+    const art = artworks[currentArtIndex];
+    art.slides.forEach((_, idx) => {
+      const dot = document.createElement('div');
+      dot.className = 'slide-dot' + (idx === currentSlideIndex ? ' active' : '');
+      dotsContainer.appendChild(dot);
+    });
+  }
 
   function openArtwork(index) {
     document.getElementById("main-screen").style.display = "none";
@@ -222,6 +266,7 @@
     sliderImg.src = art.slides[currentSlideIndex];
     document.getElementById("artwork-desc").innerText = art.desc;
     document.getElementById("artwork-price").innerText = art.price;
+    renderDots();
   }
 
   function prevSlide() {
@@ -235,6 +280,15 @@
     currentSlideIndex = (currentSlideIndex + 1) % art.slides.length;
     showSlide();
   }
+
+  // Свайп пальцем
+  sliderImg.addEventListener("touchstart", e => { startX = e.touches[0].clientX; });
+  sliderImg.addEventListener("touchend", e => {
+    const endX = e.changedTouches[0].clientX;
+    const diff = endX - startX;
+    if (diff > 50) prevSlide();
+    if (diff < -50) nextSlide();
+  });
 
   function goBack() {
     document.getElementById("artwork-screen").style.display = "none";
@@ -250,7 +304,7 @@
     document.getElementById("about-screen").style.display = "none";
     document.getElementById("main-screen").style.display = "block";
   }
-</script>
 
+</script>
 </body>
 </html>
