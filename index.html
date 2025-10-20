@@ -1,213 +1,160 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Мощенкова Мария — Визитка</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <meta name="theme-color" content="#0b0b0b">
-  <style>
-    :root{
-      --bg:#0b0b0b; --card:#121212; --muted:#9b9b9b; --accent:#e6c07a; --white:#f7f7f7;
-      --radius:14px; --gap:16px; --maxw:900px;
-    }
-    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;}
-    body{background:linear-gradient(180deg,#070707 0%, #0f0f0f 100%);color:var(--white);-webkit-font-smoothing:antialiased;}
-    .app{max-width:var(--maxw);margin:0 auto;padding:18px;box-sizing:border-box;}
-    header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#2b2b2b,#0f0f0f);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:18px}
-    h1{font-size:20px;margin:0}
-    .subtitle{color:var(--muted);font-size:13px;margin-top:4px}
-    /* gallery grid */
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .card{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
-    .thumb{width:100%;height:160px;object-fit:cover;display:block}
-    .card-body{padding:12px}
-    .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.04);color:var(--white);border:1px solid rgba(255,255,255,0.03);cursor:pointer;font-weight:600}
-    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
-    .footer-btns{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:10px;z-index:60}
-    .fab{width:56px;height:56px;border-radius:14px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#111;font-weight:700;cursor:pointer;box-shadow:0 6px 22px rgba(230,192,122,0.12)}
-    /* viewer */
-    .viewer{position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;z-index:80}
-    .viewer img{max-width:92%;max-height:70vh;border-radius:12px;object-fit:contain}
-    .viewer .desc{max-width:920px;margin-top:14px;color:var(--muted);text-align:left}
-    /* about */
-    .about{display:flex;gap:14px;align-items:flex-start}
-    .avatar{width:120px;height:120px;border-radius:12px;overflow:hidden;flex:0 0 120px}
-    .avatar img{width:100%;height:100%;object-fit:cover}
-    .about-body{flex:1}
-    .links{display:flex;gap:10px;margin-top:12px}
-    a.link{padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.03);text-decoration:none;color:var(--white);font-weight:600}
-    /* small */
-    .muted{color:var(--muted);font-size:13px}
-    @media (max-width:520px){
-      .grid{grid-template-columns:1fr}
-      .avatar{width:86px;height:86px}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мария Мощенкова</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #111;
+    color: #fff;
+  }
+
+  .header {
+    text-align: center;
+    padding: 20px;
+  }
+
+  .header h1 {
+    margin: 0;
+    font-size: 28px;
+  }
+
+  .header h2 {
+    margin: 5px 0 20px 0;
+    font-size: 18px;
+    font-weight: normal;
+  }
+
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 20px;
+  }
+
+  .gallery img {
+    max-width: 90%;
+    height: auto;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .gallery img:hover {
+    transform: scale(1.02);
+  }
+
+  .artwork-page, .about-page {
+    display: none;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .artwork-page img, .about-page img {
+    max-width: 90%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  .artwork-page .description,
+  .about-page .bio {
+    margin-top: 15px;
+    font-size: 16px;
+  }
+
+  .artwork-page .price {
+    margin-top: 5px;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .back-button, .about-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    background-color: #444;
+    color: #fff;
+  }
+
+</style>
 </head>
 <body>
-  <div class="app" id="app">
-    <!-- Header -->
-    <header>
-      <div class="logo">ММ</div>
-      <div>
-        <h1>Мощенкова Мария</h1>
-        <div class="subtitle">Художник — интерьерная живопись · Картины на заказ</div>
-      </div>
-    </header>
 
-    <!-- MAIN / HOME SCREEN -->
-    <main id="home" data-page>
-      <section style="margin-bottom:14px">
-        <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
-          <div>
-            <div class="muted">Добро пожаловать</div>
-            <h2 style="margin:6px 0">Короткая презентация</h2>
-            <div class="muted">Работаю в жанре интерьерной живописи. Подход индивидуален — пишу картины под ваш интерьер.</div>
-          </div>
-          <div style="text-align:right">
-            <div class="muted">Instagram</div>
-            <div style="font-weight:700;margin-top:4px">@mary_mosch_</div>
-          </div>
-        </div>
-      </section>
-
-      <section style="margin-top:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-weight:700">Галерея</div>
-          <div class="muted">Нажмите на картинку, чтобы открыть</div>
-        </div>
-
-        <div class="grid">
-          <!-- single item -->
-          <div class="card">
-            <img id="thumbImg" class="thumb" src="images/IMG_1922.JPG" alt="Картина - пример">
-            <div class="card-body">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div>
-                  <div style="font-weight:700">Картина — Пример</div>
-                  <div class="muted" style="font-size:13px">Интерьерная живопись · 2024</div>
-                </div>
-                <button class="btn" id="openBtn">Открыть</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- placeholder card to make grid balanced -->
-          <div style="opacity:0.0"></div>
-        </div>
-      </section>
-
-      <section style="margin-top:18px">
-        <button class="btn btn-ghost" id="aboutBtn">Обо мне</button>
-      </section>
-    </main>
-
-    <!-- VIEWER SCREEN (hidden by default) -->
-    <div id="viewer" class="viewer" style="display:none">
-      <button class="btn" id="closeViewer" style="position:absolute;left:18px;top:18px">← Назад</button>
-      <img id="viewerImg" src="images/IMG_1922.JPG" alt="Полное изображение">
-      <div class="desc" style="color:var(--white);max-width:820px">
-        <h3 style="margin:0 0 8px 0">Название: Плейсхолдер</h3>
-        <p class="muted">Описание: Здесь будет текст описания картины — материалы, размер, год, контекст проекта. (Плейсхолдер)</p>
-        <p class="muted">Если нужно, можно добавить ссылку на Instagram или контакт для заказа.</p>
-      </div>
-    </div>
-
-    <!-- ABOUT SCREEN (hidden by default) -->
-    <section id="about" data-page style="display:none; margin-top:6px">
-      <div class="about">
-        <div class="avatar"><img src="images/IMG_1922.JPG" alt="Мария"></div>
-        <div class="about-body">
-          <div style="font-weight:700">Мощенкова Мария</div>
-          <div class="muted">Художник — интерьерная живопись</div>
-          <p style="margin-top:8px;color:var(--muted)">
-            Привет — я создаю интерьерные картины на заказ, ориентируясь на стиль и палитру вашего интерьера.
-            Работаю в смешанной технике: акрил, масло, текстуры. Выполняю как небольшие панели, так и крупномасштабные полотна.
-          </p>
-
-          <div class="links">
-            <a class="link" id="tgLink" href="tg://resolve?domain=mary_mosch_" target="_blank">Написать в Telegram</a>
-            <a class="link" id="igLink" href="https://www.instagram.com/mary_mosch_/" target="_blank">Instagram</a>
-            <a class="link" id="siteLink" href="#" target="_blank">Картины на заказ</a>
-          </div>
-
-          <div style="margin-top:12px">
-            <button class="btn" id="backFromAbout">← Назад</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- floating action (open home quickly) -->
-    <div class="footer-btns">
-      <div class="fab" id="homeFab">M</div>
-    </div>
+<!-- Главный экран -->
+<div id="main-screen">
+  <div class="header">
+    <h1>Мария Мощенкова</h1>
+    <h2>Художник иллюстратор</h2>
+    <p>дальше картины</p>
   </div>
 
-  <script>
-    // Telegram WebApp init
-    const tg = window.Telegram?.WebApp;
-    try {
-      if (tg) {
-        // expand if possible
-        if (tg.expand) tg.expand();
-        // adapt colors: we force dark theme visuals but still can read scheme
-        const scheme = tg.colorScheme || 'dark';
-        // if wanted, we could adapt CSS based on scheme
-      }
-    } catch(e){ console.warn(e) }
+  <div class="gallery">
+    <img src="https://EvgenKasta.github.io/mary-portfolio/images/1.jpg" alt="Картина 1" onclick="openArtwork(1)">
+    <img src="https://EvgenKasta.github.io/mary-portfolio/images/2.jpg" alt="Картина 2" onclick="openArtwork(2)">
+    <img src="https://EvgenKasta.github.io/mary-portfolio/images/3.jpg" alt="Картина 3" onclick="openArtwork(3)">
+    <img src="https://EvgenKasta.github.io/mary-portfolio/images/4.jpeg" alt="Картина 4" onclick="openArtwork(4)">
+  </div>
 
-    // page controls
-    const home = document.getElementById('home');
-    const viewer = document.getElementById('viewer');
-    const about = document.getElementById('about');
-    const openBtn = document.getElementById('openBtn');
-    const closeViewer = document.getElementById('closeViewer');
-    const aboutBtn = document.getElementById('aboutBtn');
-    const backFromAbout = document.getElementById('backFromAbout');
-    const homeFab = document.getElementById('homeFab');
+  <button class="about-button" onclick="openAbout()">Обо мне</button>
+</div>
 
-    function show(page){
-      // hide all
-      home.style.display = 'none';
-      viewer.style.display = 'none';
-      about.style.display = 'none';
-      if(page === 'home') home.style.display = '';
-      if(page === 'viewer') viewer.style.display = '';
-      if(page === 'about') about.style.display = '';
-    }
+<!-- Страница отдельной картины -->
+<div id="artwork-screen" class="artwork-page">
+  <img id="artwork-img" src="" alt="Картина">
+  <div class="description" id="artwork-desc"></div>
+  <div class="price" id="artwork-price"></div>
+  <button class="back-button" onclick="goBack()">Назад</button>
+</div>
 
-    openBtn.addEventListener('click', ()=> show('viewer'));
-    closeViewer.addEventListener('click', ()=> show('home'));
-    aboutBtn.addEventListener('click', ()=> show('about'));
-    backFromAbout.addEventListener('click', ()=> show('home'));
-    homeFab.addEventListener('click', ()=> show('home'));
+<!-- Страница Обо мне -->
+<div id="about-screen" class="about-page">
+  <img src="https://<твой-логин>.github.io/mary-portfolio/images/author.jpg" alt="Мария Мощенкова">
+  <div class="bio">
+    Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.
+  </div>
+  <button class="back-button" onclick="goBackAbout()">Назад</button>
+</div>
 
-    // external links handling (some Telegram WebView block target=_blank; open via WebApp)
-    document.getElementById('igLink').addEventListener('click', (e)=>{
-      e.preventDefault();
-      const url = e.currentTarget.href;
-      if (tg && tg.openLink) tg.openLink(url); else window.open(url,'_blank');
-    });
-    document.getElementById('tgLink').addEventListener('click', (e)=>{
-      e.preventDefault();
-      const url = e.currentTarget.href;
-      if (tg && tg.openLink) tg.openLink(url); else window.open(url,'_blank');
-    });
-    document.getElementById('siteLink').addEventListener('click', (e)=>{
-      e.preventDefault();
-      const url = 'https://t.me/'; // placeholder, replace with real landing if available
-      if (tg && tg.openLink) tg.openLink(url); else window.open(url,'_blank');
-    });
+<script>
+  // данные картин
+  const artworks = [
+    {src: "https://EvgenKasta.github.io/mary-portfolio/images/1.jpg", desc: "Описание работы 1", price: "Цена: 100$"},
+    {src: "https://EvgenKasta.github.io/mary-portfolio/images/2.jpg", desc: "Описание работы 2", price: "Цена: 120$"},
+    {src: "https://EvgenKasta.github.io/mary-portfolio/images/3.jpg", desc: "Описание работы 3", price: "Цена: 90$"},
+    {src: "https://EvgenKasta.github.io/mary-portfolio/images/4.jpeg", desc: "Описание работы 4", price: "Цена: 150$"},
+  ];
 
-    // Optional: handle image loading error (if Google Drive sharing not enabled)
-    const thumb = document.getElementById('thumbImg');
-    thumb.addEventListener('error', ()=>{
-      thumb.src = 'https://placehold.co/800x600?text=Image+not+accessible';
-      document.getElementById('viewerImg').src = thumb.src;
-    });
-  </script>
+  function openArtwork(index) {
+    document.getElementById("main-screen").style.display = "none";
+    const art = artworks[index - 1];
+    document.getElementById("artwork-img").src = art.src;
+    document.getElementById("artwork-desc").innerText = art.desc;
+    document.getElementById("artwork-price").innerText = art.price;
+    document.getElementById("artwork-screen").style.display = "block";
+  }
+
+  function goBack() {
+    document.getElementById("artwork-screen").style.display = "none";
+    document.getElementById("main-screen").style.display = "block";
+  }
+
+  function openAbout() {
+    document.getElementById("main-screen").style.display = "none";
+    document.getElementById("about-screen").style.display = "block";
+  }
+
+  function goBackAbout() {
+    document.getElementById("about-screen").style.display = "none";
+    document.getElementById("main-screen").style.display = "block";
+  }
+</script>
+
 </body>
 </html>
