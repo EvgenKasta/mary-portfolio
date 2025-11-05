@@ -43,15 +43,14 @@
     margin-top: 10px;
   }
 
-  /* Блок с фоном между линиями */
   .background-block {
     background-image: url('/images/main.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    margin: 10px 0; /* расстояние от линий */
+    margin: 10px 0;
     padding: 20px 0;
-    border-radius: 8px; /* скругление при желании */
+    border-radius: 8px;
   }
 
   .gallery {
@@ -219,6 +218,7 @@
   </div>
 
   <button class="about-button" onclick="openAbout()">Обо мне</button>
+  <button id="admin-button" class="about-button" onclick="openAdmin()">Добавить работу</button>
 
   <div class="instagram-bar"></div>
   <a href="https://www.instagram.com/mary_mosch_/" target="_blank" class="instagram-icon">📷 Instagram</a>
@@ -231,9 +231,7 @@
     <div class="slide-arrow left" onclick="prevSlide()">&#10094;</div>
     <div class="slide-arrow right" onclick="nextSlide()">&#10095;</div>
   </div>
-
   <div class="slide-dots" id="slide-dots"></div>
-
   <div class="description" id="artwork-desc"></div>
   <div class="price" id="artwork-price"></div>
   <button class="back-button" onclick="goBack()">Назад</button>
@@ -246,6 +244,18 @@
     Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.
   </div>
   <button class="back-button" onclick="goBackAbout()">Назад</button>
+</div>
+
+<!-- Админ-зона -->
+<div id="admin-screen" class="about-page" style="display:none;">
+  <h2>Добавить новую работу</h2>
+  <form id="uploadForm">
+    <input type="text" id="desc" placeholder="Описание картины" required><br><br>
+    <input type="text" id="price" placeholder="Цена" required><br><br>
+    <input type="file" id="images" multiple accept="image/*" required><br><br>
+    <button type="submit" class="about-button">Загрузить</button>
+  </form>
+  <button class="back-button" onclick="goBackAdmin()">Назад</button>
 </div>
 
 <script>
@@ -322,78 +332,27 @@
     document.getElementById("about-screen").style.display = "none";
     document.getElementById("main-screen").style.display = "block";
   }
-</script>
-  <div id="admin-screen" class="about-page" style="display:none;">
-  <h2>Добавить новую работу</h2>
-  <form id="uploadForm">
-    <input type="text" id="desc" placeholder="Описание картины" required><br><br>
-    <input type="text" id="price" placeholder="Цена" required><br><br>
-    <input type="file" id="images" multiple accept="image/*" required><br><br>
-    <button type="submit" class="about-button">Загрузить</button>
-  </form>
-  <button class="back-button" onclick="goBackAdmin()">Назад</button>
-</div>
 
-<button id="admin-button" class="about-button" onclick="openAdmin()">Добавить работу</button>
-
-<script>
-function openAdmin() {
-  const password = prompt("Введите пароль:");
-  if (!password) return;
-  localStorage.setItem("adminPassword", password);
-  document.getElementById("main-screen").style.display = "none";
-  document.getElementById("admin-screen").style.display = "block";
-}
-
-function goBackAdmin() {
-  document.getElementById("admin-screen").style.display = "none";
-  document.getElementById("main-screen").style.display = "block";
-}
-
-document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  
-  const desc = document.getElementById("desc").value;
-  const price = document.getElementById("price").value;
-  const files = document.getElementById("images").files;
-  const password = localStorage.getItem("adminPassword");
-
-  const base64Images = await Promise.all([...files].map(file => {
-    return new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.readAsDataURL(file);
-    });
-  }));
-
-  const res = await fetch("/api/upload", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password, desc, price, images: base64Images })
-  });
-
-  const data = await res.json();
-  if (data.success) {
-    alert("✅ Работа добавлена!");
-    goBackAdmin();
-  } else {
-    alert("❌ Ошибка: " + (data.error || 'неизвестная'));
+  // === Админка ===
+  function openAdmin() {
+    const password = prompt("Введите пароль для входа:");
+    if (password === "maria123") { // замени на свой
+      document.getElementById("main-screen").style.display = "none";
+      document.getElementById("admin-screen").style.display = "block";
+    } else {
+      alert("Неверный пароль");
+    }
   }
-});
-</script>
-  <!-- Кнопка входа в админку -->
-<button id="admin-button" class="about-button" onclick="openAdmin()">Добавить работу</button>
 
-<!-- Админ-зона -->
-<div id="admin-screen" class="about-page" style="display:none;">
-  <h2>Добавить новую работу</h2>
-  <form id="uploadForm" enctype="multipart/form-data">
-    <input type="text" name="desc" placeholder="Описание картины" required><br><br>
-    <input type="text" name="price" placeholder="Цена" required><br><br>
-    <input type="file" name="images" multiple accept="image/*" required><br><br>
-    <button type="submit" class="about-button">Загрузить</button>
-  </form>
-  <button class="back-button" onclick="goBackAdmin()">Назад</button>
-</div>
+  function goBackAdmin() {
+    document.getElementById("admin-screen").style.display = "none";
+    document.getElementById("main-screen").style.display = "block";
+  }
+
+  document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    alert("Здесь позже добавим загрузку на GitHub");
+  });
+</script>
 </body>
 </html>
