@@ -14,220 +14,314 @@
     overflow-x: hidden;
     touch-action: pan-y;
   }
-  #main-screen { text-align: center; padding: 0; }
-  .header { padding-top: 20px; margin: 0; }
-  .header h1 { margin: 0; font-size: 28px; }
-  .header h2 { margin: 5px 0; font-size: 18px; font-weight: normal; }
-  .header-bar { width: 100%; height: 2px; background-color: #fff; margin-top: 10px; }
-  .background-block { background-image: url('/images/main.jpg'); background-size: cover; background-repeat: no-repeat; background-position: center; margin: 10px 0; padding: 20px 0; border-radius: 8px; }
-  .gallery { display: flex; flex-direction: column; align-items: center; gap: 20px; }
-  .gallery img { max-width: 80%; height: auto; border-radius: 8px; border: 3px solid #fff; cursor: pointer; transition: transform 0.2s; }
-  .gallery img:hover { transform: scale(1.02); }
-  .about-button { display: block; margin: 20px auto; padding: 10px 20px; font-size: 14px; cursor: pointer; border: 2px solid #fff; border-radius: 6px; background-color: #111; color: #fff; }
-  .instagram-bar { width: 100%; height: 2px; background-color: #fff; margin: 20px 0 10px 0; }
-  .instagram-icon { display: block; text-align: center; font-size: 24px; color: #fff; text-decoration: none; margin-bottom: 20px; }
-  .artwork-page, .about-page, #admin-screen { display: none; text-align: center; padding: 20px; min-height: 100vh; box-sizing: border-box; position: relative; background-color: #111; }
-  .artwork-slider { max-width: 90%; margin: 0 auto; position: relative; overflow: hidden; }
-  .artwork-slider img { width: 100%; height: auto; border-radius: 8px; touch-action: pan-y; transition: transform 0.5s ease; }
-  .slide-arrow { position: absolute; top: 50%; transform: translateY(-50%); font-size: 32px; color: #000; background-color: rgba(255,255,255,0.1); border-radius: 50%; padding: 8px; cursor: pointer; user-select: none; z-index: 10; }
+
+  #main-screen {
+    text-align: center;
+    padding: 0;
+  }
+
+  .header {
+    padding-top: 20px;
+    margin: 0;
+  }
+
+  .header h1 {
+    margin: 0;
+    font-size: 28px;
+  }
+
+  .header h2 {
+    margin: 5px 0;
+    font-size: 18px;
+    font-weight: normal;
+  }
+
+  .header-bar {
+    width: 100%;
+    height: 2px;
+    background-color: #fff;
+    margin-top: 10px;
+  }
+
+  /* Блок с фоном между линиями */
+  .background-block {
+    background-image: url('/images/main.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    margin: 10px 0; /* расстояние от линий */
+    padding: 20px 0;
+    border-radius: 8px; /* скругление при желании */
+  }
+
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .gallery img {
+    max-width: 80%;
+    height: auto;
+    border-radius: 8px;
+    border: 3px solid #fff;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .gallery img:hover {
+    transform: scale(1.02);
+  }
+
+  .about-button {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 2px solid #fff;
+    border-radius: 6px;
+    background-color: #111;
+    color: #fff;
+  }
+
+  .instagram-bar {
+    width: 100%;
+    height: 2px;
+    background-color: #fff;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .instagram-icon {
+    display: block;
+    text-align: center;
+    font-size: 24px;
+    color: #fff;
+    text-decoration: none;
+    margin-bottom: 20px;
+  }
+
+  .artwork-page, .about-page {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    min-height: 100vh;
+    box-sizing: border-box;
+    position: relative;
+    background-color: #111;
+  }
+
+  .artwork-slider {
+    max-width: 90%;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .artwork-slider img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    touch-action: pan-y;
+    transition: transform 0.5s ease;
+  }
+
+  .slide-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 32px;
+    color: #000;
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    padding: 8px;
+    cursor: pointer;
+    user-select: none;
+    z-index: 10;
+  }
+
   .slide-arrow.left { left: 10px; }
   .slide-arrow.right { right: 10px; }
-  .slide-dots { display: flex; justify-content: center; margin-top: 10px; gap: 6px; }
-  .slide-dot { width: 10px; height: 10px; border-radius: 50%; background-color: rgba(255,255,255,0.3); transition: background-color 0.3s; }
-  .slide-dot.active { background-color: #fff; }
-  .artwork-page .description { margin-top: 15px; font-size: 16px; }
-  .artwork-page .price { margin-top: 5px; font-size: 18px; font-weight: bold; }
-  .back-button { position: absolute; bottom: 20px; left: 20px; padding: 10px 20px; font-size: 14px; cursor: pointer; border: 2px solid #fff; border-radius: 6px; background-color: #111; color: #fff; }
-  .about-page img { max-width: 90%; height: auto; border-radius: 8px; }
-  .about-page .bio { margin-top: 15px; font-size: 16px; }
+
+  .slide-dots {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    gap: 6px;
+  }
+
+  .slide-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.3);
+    transition: background-color 0.3s;
+  }
+
+  .slide-dot.active {
+    background-color: #fff;
+  }
+
+  .artwork-page .description {
+    margin-top: 15px;
+    font-size: 16px;
+  }
+
+  .artwork-page .price {
+    margin-top: 5px;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .back-button {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 2px solid #fff;
+    border-radius: 6px;
+    background-color: #111;
+    color: #fff;
+  }
+
+  .about-page img {
+    max-width: 90%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  .about-page .bio {
+    margin-top: 15px;
+    font-size: 16px;
+  }
 </style>
 </head>
 <body>
 
-<!-- Главный экран -->
 <div id="main-screen">
   <div class="header">
     <h1>Мария Мощенкова</h1>
     <h2>Художник иллюстратор</h2>
     <div class="header-bar"></div>
   </div>
+
   <div class="background-block">
-    <div class="gallery" id="gallery"></div>
+    <div class="gallery">
+      <img src="/images/1.JPG" alt="Картина 1" onclick="openArtwork(0)">
+      <img src="/images/2.JPG" alt="Картина 2" onclick="openArtwork(1)">
+      <img src="/images/3.JPG" alt="Картина 3" onclick="openArtwork(2)">
+      <img src="/images/4.JPG" alt="Картина 4" onclick="openArtwork(3)">
+    </div>
   </div>
+
   <button class="about-button" onclick="openAbout()">Обо мне</button>
-  <button class="about-button" onclick="openAdmin()">Добавить работу</button>
+
   <div class="instagram-bar"></div>
   <a href="https://www.instagram.com/mary_mosch_/" target="_blank" class="instagram-icon">📷 Instagram</a>
 </div>
 
-<!-- Страница картины -->
+<!-- Страница отдельной картины -->
 <div id="artwork-screen" class="artwork-page">
   <div class="artwork-slider">
     <img id="artwork-img" src="" alt="Картина">
     <div class="slide-arrow left" onclick="prevSlide()">&#10094;</div>
     <div class="slide-arrow right" onclick="nextSlide()">&#10095;</div>
   </div>
+
   <div class="slide-dots" id="slide-dots"></div>
+
   <div class="description" id="artwork-desc"></div>
   <div class="price" id="artwork-price"></div>
   <button class="back-button" onclick="goBack()">Назад</button>
 </div>
 
-<!-- Страница "Обо мне" -->
+<!-- Страница Обо мне -->
 <div id="about-screen" class="about-page">
   <img src="/images/me.JPG" alt="Мария Мощенкова">
-  <div class="bio">Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.</div>
+  <div class="bio">
+    Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.
+  </div>
   <button class="back-button" onclick="goBackAbout()">Назад</button>
 </div>
 
-<!-- Админ-зона -->
-<div id="admin-screen" class="about-page">
-  <h2>Добавить новую работу</h2>
-  <form id="uploadForm">
-    <input type="text" id="desc" placeholder="Описание картины" required><br><br>
-    <input type="text" id="price" placeholder="Цена" required><br><br>
-    <input type="file" id="images" multiple accept="image/*" required><br><br>
-    <button type="submit" class="about-button">Загрузить</button>
-  </form>
-  <button class="back-button" onclick="goBackAdmin()">Назад</button>
-</div>
-
 <script>
-let artworks = [];
-let currentArtIndex = 0;
-let currentSlideIndex = 0;
-const sliderImg = document.getElementById("artwork-img");
-const dotsContainer = document.getElementById("slide-dots");
-let startX = 0;
+  const artworks = [
+    {slides: ["/images/1_1.JPG","/images/1_2.JPG","/images/1_3.JPG","/images/1_4.JPG"], desc: "Описание работы 1", price: "Цена: 100$"},
+    {slides: ["/images/2_1.JPG","/images/2_2.JPG","/images/2_3.JPG","/images/2_4.JPG"], desc: "Описание работы 2", price: "Цена: 120$"},
+    {slides: ["/images/3_1.JPG","/images/3_2.JPG","/images/3_3.JPG","/images/3_4.JPG"], desc: "Описание работы 3", price: "Цена: 90$"},
+    {slides: ["/images/4_1.JPG","/images/4_2.JPG","/images/4_3.JPG","/images/4_4.JPG"], desc: "Описание работы 4", price: "Цена: 150$"}
+  ];
 
-// --- Загрузка галереи ---
-async function loadGallery() {
-  try {
-    const res = await fetch('/artworks.json');
-    artworks = await res.json();
-    const gallery = document.getElementById('gallery');
-    gallery.innerHTML = '';
-    artworks.forEach((art, index) => {
-      const img = document.createElement('img');
-      img.src = art.slides[0];
-      img.alt = `Картина ${index + 1}`;
-      img.onclick = () => openArtwork(index);
-      gallery.appendChild(img);
+  let currentArtIndex = 0;
+  let currentSlideIndex = 0;
+  const sliderImg = document.getElementById("artwork-img");
+  const dotsContainer = document.getElementById("slide-dots");
+  let startX = 0;
+
+  function renderDots() {
+    dotsContainer.innerHTML = '';
+    const art = artworks[currentArtIndex];
+    art.slides.forEach((_, idx) => {
+      const dot = document.createElement('div');
+      dot.className = 'slide-dot' + (idx === currentSlideIndex ? ' active' : '');
+      dotsContainer.appendChild(dot);
     });
-  } catch(err) {
-    console.error(err);
   }
-}
 
-loadGallery();
+  function openArtwork(index) {
+    document.getElementById("main-screen").style.display = "none";
+    currentArtIndex = index;
+    currentSlideIndex = 0;
+    showSlide();
+    document.getElementById("artwork-screen").style.display = "block";
+  }
 
-// --- Слайдер ---
-function renderDots() {
-  dotsContainer.innerHTML = '';
-  const art = artworks[currentArtIndex];
-  art.slides.forEach((_, idx) => {
-    const dot = document.createElement('div');
-    dot.className = 'slide-dot' + (idx === currentSlideIndex ? ' active' : '');
-    dotsContainer.appendChild(dot);
+  function showSlide() {
+    const art = artworks[currentArtIndex];
+    sliderImg.src = art.slides[currentSlideIndex];
+    document.getElementById("artwork-desc").innerText = art.desc;
+    document.getElementById("artwork-price").innerText = art.price;
+    renderDots();
+  }
+
+  function prevSlide() {
+    const art = artworks[currentArtIndex];
+    currentSlideIndex = (currentSlideIndex - 1 + art.slides.length) % art.slides.length;
+    showSlide();
+  }
+
+  function nextSlide() {
+    const art = artworks[currentArtIndex];
+    currentSlideIndex = (currentSlideIndex + 1) % art.slides.length;
+    showSlide();
+  }
+
+  sliderImg.addEventListener("touchstart", e => { startX = e.touches[0].clientX; });
+  sliderImg.addEventListener("touchend", e => {
+    const endX = e.changedTouches[0].clientX;
+    const diff = endX - startX;
+    if (diff > 50) prevSlide();
+    if (diff < -50) nextSlide();
   });
-}
 
-function openArtwork(index) {
-  currentArtIndex = index;
-  currentSlideIndex = 0;
-  showSlide();
-  document.getElementById("main-screen").style.display = "none";
-  document.getElementById("artwork-screen").style.display = "block";
-}
-
-function showSlide() {
-  const art = artworks[currentArtIndex];
-  sliderImg.src = art.slides[currentSlideIndex];
-  document.getElementById("artwork-desc").innerText = art.desc;
-  document.getElementById("artwork-price").innerText = art.price;
-  renderDots();
-}
-
-function prevSlide() {
-  const art = artworks[currentArtIndex];
-  currentSlideIndex = (currentSlideIndex - 1 + art.slides.length) % art.slides.length;
-  showSlide();
-}
-
-function nextSlide() {
-  const art = artworks[currentArtIndex];
-  currentSlideIndex = (currentSlideIndex + 1) % art.slides.length;
-  showSlide();
-}
-
-sliderImg.addEventListener("touchstart", e => startX = e.touches[0].clientX);
-sliderImg.addEventListener("touchend", e => {
-  const diff = e.changedTouches[0].clientX - startX;
-  if (diff > 50) prevSlide();
-  if (diff < -50) nextSlide();
-});
-
-// --- Навигация ---
-function goBack() {
-  document.getElementById("artwork-screen").style.display = "none";
-  document.getElementById("main-screen").style.display = "block";
-}
-function openAbout() {
-  document.getElementById("main-screen").style.display = "none";
-  document.getElementById("about-screen").style.display = "block";
-}
-function goBackAbout() {
-  document.getElementById("about-screen").style.display = "none";
-  document.getElementById("main-screen").style.display = "block";
-}
-
-// --- Админка ---
-function openAdmin() {
-  const password = prompt("Введите пароль:");
-  if (!password) return;
-  localStorage.setItem("adminPassword", password);
-  document.getElementById("main-screen").style.display = "none";
-  document.getElementById("admin-screen").style.display = "block";
-}
-function goBackAdmin() {
-  document.getElementById("admin-screen").style.display = "none";
-  document.getElementById("main-screen").style.display = "block";
-}
-
-document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const desc = document.getElementById("desc").value;
-  const price = document.getElementById("price").value;
-  const files = document.getElementById("images").files;
-  const password = localStorage.getItem("adminPassword");
-
-  if (!files.length) return alert("Выберите хотя бы одно изображение");
-
-  const base64Images = await Promise.all([...files].map(f => new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.readAsDataURL(f);
-  })));
-
-  try {
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, desc, price, images: base64Images })
-    });
-    const data = await res.json();
-    if (data.success) {
-      alert("✅ Работа добавлена!");
-      goBackAdmin();
-      loadGallery();
-    } else {
-      alert("❌ Ошибка: " + (data.error || 'неизвестная'));
-    }
-  } catch(err) {
-    console.error(err);
-    alert("❌ Ошибка при загрузке");
+  function goBack() {
+    document.getElementById("artwork-screen").style.display = "none";
+    document.getElementById("main-screen").style.display = "block";
   }
-});
+
+  function openAbout() {
+    document.getElementById("main-screen").style.display = "none";
+    document.getElementById("about-screen").style.display = "block";
+  }
+
+  function goBackAbout() {
+    document.getElementById("about-screen").style.display = "none";
+    document.getElementById("main-screen").style.display = "block";
+  }
 </script>
 </body>
 </html>
