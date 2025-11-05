@@ -22,7 +22,7 @@ export default async function handler(req, res) {
       const base64Data = img.split(',')[1];
 
       const uploadRes = await fetch(
-        `https://api.github.com/repos/${repo}/contents/public/images/${fileName}`,
+        `https://api.github.com/repos/${repo}/contents/public/images/${fileName}?ref=main`,
         {
           method: 'PUT',
           headers: {
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
         throw new Error(`GitHub upload failed: ${text}`);
       }
 
-      uploadedUrls.push(`https://raw.githubusercontent.com/${repo}/main/public/images/${fileName}`);
+      uploadedUrls.push(`https://raw.githubusercontent.com/${repo}/main/public/images/${fileName}?ref=main`);
     }
 
     // Получаем текущий artworks.json
