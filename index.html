@@ -69,9 +69,7 @@
     transition: transform 0.2s;
   }
 
-  .gallery img:hover {
-    transform: scale(1.02);
-  }
+  .gallery img:hover { transform: scale(1.02); }
 
   .about-button {
     display: block;
@@ -159,20 +157,10 @@
     transition: background-color 0.3s;
   }
 
-  .slide-dot.active {
-    background-color: #fff;
-  }
+  .slide-dot.active { background-color: #fff; }
 
-  .artwork-page .description {
-    margin-top: 15px;
-    font-size: 16px;
-  }
-
-  .artwork-page .price {
-    margin-top: 5px;
-    font-size: 18px;
-    font-weight: bold;
-  }
+  .artwork-page .description { margin-top: 15px; font-size: 16px; }
+  .artwork-page .price { margin-top: 5px; font-size: 18px; font-weight: bold; }
 
   .back-button {
     position: absolute;
@@ -201,6 +189,7 @@
 </head>
 <body>
 
+<!-- Главный экран -->
 <div id="main-screen">
   <div class="header">
     <h1>Мария Мощенкова</h1>
@@ -224,7 +213,7 @@
   <a href="https://www.instagram.com/mary_mosch_/" target="_blank" class="instagram-icon">📷 Instagram</a>
 </div>
 
-<!-- Страница отдельной картины -->
+<!-- Страница картины -->
 <div id="artwork-screen" class="artwork-page">
   <div class="artwork-slider">
     <img id="artwork-img" src="" alt="Картина">
@@ -237,12 +226,10 @@
   <button class="back-button" onclick="goBack()">Назад</button>
 </div>
 
-<!-- Страница Обо мне -->
+<!-- Страница "Обо мне" -->
 <div id="about-screen" class="about-page">
   <img src="/images/me.JPG" alt="Мария Мощенкова">
-  <div class="bio">
-    Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.
-  </div>
+  <div class="bio">Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.</div>
   <button class="back-button" onclick="goBackAbout()">Назад</button>
 </div>
 
@@ -335,13 +322,11 @@
 
   // === Админка ===
   function openAdmin() {
-    const password = prompt("Введите пароль для входа:");
-    if (password === "maria123") { // замени на свой
-      document.getElementById("main-screen").style.display = "none";
-      document.getElementById("admin-screen").style.display = "block";
-    } else {
-      alert("Неверный пароль");
-    }
+    const password = prompt("Введите пароль:");
+    if (!password) return;
+    localStorage.setItem("adminPassword", password);
+    document.getElementById("main-screen").style.display = "none";
+    document.getElementById("admin-screen").style.display = "block";
   }
 
   function goBackAdmin() {
@@ -351,7 +336,33 @@
 
   document.getElementById("uploadForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    alert("Здесь позже добавим загрузку на GitHub");
+    
+    const desc = document.getElementById("desc").value;
+    const price = document.getElementById("price").value;
+    const files = document.getElementById("images").files;
+    const password = localStorage.getItem("adminPassword");
+
+    const base64Images = await Promise.all([...files].map(file => {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }));
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password, desc, price, images: base64Images })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      alert("✅ Работа добавлена!");
+      goBackAdmin();
+    } else {
+      alert("❌ Ошибка: " + (data.error || 'неизвестная'));
+    }
   });
 </script>
 </body>
