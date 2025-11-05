@@ -1,5 +1,5 @@
 export const config = {
-  api: { bodyParser: { sizeLimit: '50mb' } }, // увеличен лимит на большие изображения
+  api: { bodyParser: { sizeLimit: '50mb' } }, // увеличен лимит для больших изображений
 };
 
 export default async function handler(req, res) {
