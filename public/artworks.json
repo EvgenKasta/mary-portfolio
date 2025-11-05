@@ -1,0 +1,20 @@
+[
+  {
+    "slides": [
+      "/images/1_1.JPG",
+      "/images/1_2.JPG",
+      "/images/1_3.JPG"
+    ],
+    "desc": "Описание работы 1",
+    "price": "Цена: 100$"
+  },
+  {
+    "slides": [
+      "/images/2_1.JPG",
+      "/images/2_2.JPG",
+      "/images/2_3.JPG"
+    ],
+    "desc": "Описание работы 2",
+    "price": "Цена: 120$"
+  }
+]
