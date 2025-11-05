@@ -323,5 +323,63 @@
     document.getElementById("main-screen").style.display = "block";
   }
 </script>
+  <div id="admin-screen" class="about-page" style="display:none;">
+  <h2>Добавить новую работу</h2>
+  <form id="uploadForm">
+    <input type="text" id="desc" placeholder="Описание картины" required><br><br>
+    <input type="text" id="price" placeholder="Цена" required><br><br>
+    <input type="file" id="images" multiple accept="image/*" required><br><br>
+    <button type="submit" class="about-button">Загрузить</button>
+  </form>
+  <button class="back-button" onclick="goBackAdmin()">Назад</button>
+</div>
+
+<button id="admin-button" class="about-button" onclick="openAdmin()">Добавить работу</button>
+
+<script>
+function openAdmin() {
+  const password = prompt("Введите пароль:");
+  if (!password) return;
+  localStorage.setItem("adminPassword", password);
+  document.getElementById("main-screen").style.display = "none";
+  document.getElementById("admin-screen").style.display = "block";
+}
+
+function goBackAdmin() {
+  document.getElementById("admin-screen").style.display = "none";
+  document.getElementById("main-screen").style.display = "block";
+}
+
+document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  const desc = document.getElementById("desc").value;
+  const price = document.getElementById("price").value;
+  const files = document.getElementById("images").files;
+  const password = localStorage.getItem("adminPassword");
+
+  const base64Images = await Promise.all([...files].map(file => {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(file);
+    });
+  }));
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password, desc, price, images: base64Images })
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    alert("✅ Работа добавлена!");
+    goBackAdmin();
+  } else {
+    alert("❌ Ошибка: " + (data.error || 'неизвестная'));
+  }
+});
+</script>
 </body>
 </html>
