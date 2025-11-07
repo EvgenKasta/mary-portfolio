@@ -1,5 +1,10 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мария Мощенкова</title>
 <style>
-  /* === Общие стили === */
   html, body {
     margin: 0;
     padding: 0;
@@ -10,38 +15,43 @@
     touch-action: pan-y;
   }
 
-  #main-screen, .artwork-page, .about-page {
+  #main-screen {
     text-align: center;
-    padding: 20px;
-    min-height: 100vh;
-    box-sizing: border-box;
-    background-color: #111;
-    position: absolute;
+    padding: 0;
+  }
+
+  .header {
+    padding-top: 20px;
+    margin: 0;
+  }
+
+  .header h1 {
+    margin: 0;
+    font-size: 28px;
+  }
+
+  .header h2 {
+    margin: 5px 0;
+    font-size: 18px;
+    font-weight: normal;
+  }
+
+  .header-bar {
     width: 100%;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.4s ease, visibility 0.4s ease;
+    height: 2px;
+    background-color: #fff;
+    margin-top: 10px;
   }
 
-  #main-screen.show, .artwork-page.show, .about-page.show {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .header h1 { margin: 0; font-size: 28px; }
-  .header h2 { margin: 5px 0; font-size: 18px; font-weight: normal; }
-  .header-bar, .instagram-bar { width: 100%; height: 2px; background-color: #fff; margin: 10px 0; }
-
+  /* Блок с фоном между линиями */
   .background-block {
     background-image: url('/images/main.jpg');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
-    margin: 10px 0;
+    margin: 10px 0; /* расстояние от линий */
     padding: 20px 0;
-    border-radius: 8px;
+    border-radius: 8px; /* скругление при желании */
   }
 
   .gallery {
@@ -52,8 +62,7 @@
   }
 
   .gallery img {
-    width: 90%;
-    max-width: 500px;
+    max-width: 80%;
     height: auto;
     border-radius: 8px;
     border: 3px solid #fff;
@@ -61,10 +70,12 @@
     transition: transform 0.2s;
   }
 
-  .gallery img:hover { transform: scale(1.02); }
+  .gallery img:hover {
+    transform: scale(1.02);
+  }
 
-  .about-button, .back-button {
-    display: inline-block;
+  .about-button {
+    display: block;
     margin: 20px auto;
     padding: 10px 20px;
     font-size: 14px;
@@ -75,9 +86,33 @@
     color: #fff;
   }
 
-  .instagram-icon { display: block; text-align: center; font-size: 24px; color: #fff; text-decoration: none; margin-bottom: 20px; }
+  .instagram-bar {
+    width: 100%;
+    height: 2px;
+    background-color: #fff;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
 
-  /* === Слайдер === */
+  .instagram-icon {
+    display: block;
+    text-align: center;
+    font-size: 24px;
+    color: #fff;
+    text-decoration: none;
+    margin-bottom: 20px;
+  }
+
+  .artwork-page, .about-page {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    min-height: 100vh;
+    box-sizing: border-box;
+    position: relative;
+    background-color: #111;
+  }
+
   .artwork-slider {
     max-width: 90%;
     margin: 0 auto;
@@ -90,11 +125,8 @@
     height: auto;
     border-radius: 8px;
     touch-action: pan-y;
-    transition: transform 0.5s ease, opacity 0.4s ease;
-    opacity: 0;
+    transition: transform 0.5s ease;
   }
-
-  .artwork-slider img.active { opacity: 1; }
 
   .slide-arrow {
     position: absolute;
@@ -126,14 +158,95 @@
     border-radius: 50%;
     background-color: rgba(255,255,255,0.3);
     transition: background-color 0.3s;
-    cursor: pointer;
   }
 
-  .slide-dot.active { background-color: #fff; }
+  .slide-dot.active {
+    background-color: #fff;
+  }
 
-  .description { margin-top: 15px; font-size: 16px; }
-  .price { margin-top: 5px; font-size: 18px; font-weight: bold; }
+  .artwork-page .description {
+    margin-top: 15px;
+    font-size: 16px;
+  }
+
+  .artwork-page .price {
+    margin-top: 5px;
+    font-size: 18px;
+    font-weight: bold;
+  }
+
+  .back-button {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    padding: 10px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 2px solid #fff;
+    border-radius: 6px;
+    background-color: #111;
+    color: #fff;
+  }
+
+  .about-page img {
+    max-width: 90%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  .about-page .bio {
+    margin-top: 15px;
+    font-size: 16px;
+  }
 </style>
+</head>
+<body>
+
+<div id="main-screen">
+  <div class="header">
+    <h1>Мария Мощенкова</h1>
+    <h2>Художник иллюстратор</h2>
+    <div class="header-bar"></div>
+  </div>
+
+  <div class="background-block">
+    <div class="gallery">
+      <img src="/images/1.JPG" alt="Картина 1" onclick="openArtwork(0)">
+      <img src="/images/2.JPG" alt="Картина 2" onclick="openArtwork(1)">
+      <img src="/images/3.JPG" alt="Картина 3" onclick="openArtwork(2)">
+      <img src="/images/4.JPG" alt="Картина 4" onclick="openArtwork(3)">
+    </div>
+  </div>
+
+  <button class="about-button" onclick="openAbout()">Обо мне</button>
+
+  <div class="instagram-bar"></div>
+  <a href="https://www.instagram.com/mary_mosch_/" target="_blank" class="instagram-icon">📷 Instagram</a>
+</div>
+
+<!-- Страница отдельной картины -->
+<div id="artwork-screen" class="artwork-page">
+  <div class="artwork-slider">
+    <img id="artwork-img" src="" alt="Картина">
+    <div class="slide-arrow left" onclick="prevSlide()">&#10094;</div>
+    <div class="slide-arrow right" onclick="nextSlide()">&#10095;</div>
+  </div>
+
+  <div class="slide-dots" id="slide-dots"></div>
+
+  <div class="description" id="artwork-desc"></div>
+  <div class="price" id="artwork-price"></div>
+  <button class="back-button" onclick="goBack()">Назад</button>
+</div>
+
+<!-- Страница Обо мне -->
+<div id="about-screen" class="about-page">
+  <img src="/images/me.JPG" alt="Мария Мощенкова">
+  <div class="bio">
+    Я художник Мария, 10 лет в искусстве, пишу картины на заказ и так далее.
+  </div>
+  <button class="back-button" onclick="goBackAbout()">Назад</button>
+</div>
 
 <script>
   const artworks = [
@@ -145,18 +258,9 @@
 
   let currentArtIndex = 0;
   let currentSlideIndex = 0;
-  let startX = 0;
-
-  const mainScreen = document.getElementById("main-screen");
-  const artworkScreen = document.getElementById("artwork-screen");
-  const aboutScreen = document.getElementById("about-screen");
   const sliderImg = document.getElementById("artwork-img");
   const dotsContainer = document.getElementById("slide-dots");
-
-  function showScreen(screen) {
-    [mainScreen, artworkScreen, aboutScreen].forEach(s => s.classList.remove("show"));
-    screen.classList.add("show");
-  }
+  let startX = 0;
 
   function renderDots() {
     dotsContainer.innerHTML = '';
@@ -164,31 +268,21 @@
     art.slides.forEach((_, idx) => {
       const dot = document.createElement('div');
       dot.className = 'slide-dot' + (idx === currentSlideIndex ? ' active' : '');
-      dot.addEventListener('click', () => {
-        currentSlideIndex = idx;
-        showSlide();
-      });
       dotsContainer.appendChild(dot);
     });
   }
 
   function openArtwork(index) {
+    document.getElementById("main-screen").style.display = "none";
     currentArtIndex = index;
     currentSlideIndex = 0;
     showSlide();
-    showScreen(artworkScreen);
+    document.getElementById("artwork-screen").style.display = "block";
   }
 
   function showSlide() {
     const art = artworks[currentArtIndex];
-    // Lazy load
-    const img = new Image();
-    img.src = art.slides[currentSlideIndex];
-    img.onload = () => {
-      sliderImg.src = img.src;
-      sliderImg.classList.add("active");
-      setTimeout(() => sliderImg.classList.remove("active"), 50);
-    };
+    sliderImg.src = art.slides[currentSlideIndex];
     document.getElementById("artwork-desc").innerText = art.desc;
     document.getElementById("artwork-price").innerText = art.price;
     renderDots();
@@ -214,7 +308,20 @@
     if (diff < -50) nextSlide();
   });
 
-  function goBack() { showScreen(mainScreen); }
-  function openAbout() { showScreen(aboutScreen); }
-  function goBackAbout() { showScreen(mainScreen); }
+  function goBack() {
+    document.getElementById("artwork-screen").style.display = "none";
+    document.getElementById("main-screen").style.display = "block";
+  }
+
+  function openAbout() {
+    document.getElementById("main-screen").style.display = "none";
+    document.getElementById("about-screen").style.display = "block";
+  }
+
+  function goBackAbout() {
+    document.getElementById("about-screen").style.display = "none";
+    document.getElementById("main-screen").style.display = "block";
+  }
 </script>
+</body>
+</html>
