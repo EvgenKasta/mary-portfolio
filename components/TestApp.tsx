@@ -52,7 +52,10 @@ export default function TestApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers, index, stage }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ answers, index, stage })
+      );
     } catch {
       // ignore
     }
@@ -65,7 +68,10 @@ export default function TestApp() {
     return Math.round((answeredCount / MAX_Q) * 100);
   }, [answers]);
 
-  const isComplete = useMemo(() => Object.keys(answers).length >= MAX_Q, [answers]);
+  const isComplete = useMemo(
+    () => Object.keys(answers).length >= MAX_Q,
+    [answers]
+  );
 
   const canPrev = stage === "test" && index > 0;
   const canNext = stage === "test" && index < MAX_Q - 1;
@@ -114,14 +120,23 @@ export default function TestApp() {
     setStage("result");
   }
 
+  // ✅ ИЗМЕНЕНО: копируем полный результат + ссылка на бот
   function shareText() {
     const top1 = ranked[0];
     const top2 = ranked[1];
-    return `Мой профиль: ${colorEmoji(top1.color)} ${colorLabel(top1.color)} (${top1.value}) + ${colorEmoji(
-      top2.color
-    )} ${colorLabel(top2.color)} (${top2.value}).\n\nПройти тест: ${
-      typeof window !== "undefined" ? window.location.href : ""
-    }`;
+    const botLink = "https://t.me/MaryPortfolioBot";
+
+    return `Мой профиль DISC:
+${colorEmoji(top1.color)} ${colorLabel(top1.color)} — ${top1.value}
+${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
+
+Все результаты:
+🔴 Красный: ${scores.red}/30
+🟡 Жёлтый: ${scores.yellow}/30
+🟢 Зелёный: ${scores.green}/30
+🔵 Синий: ${scores.blue}/30
+
+Пройти тест: ${botLink}`;
   }
 
   async function share() {
@@ -144,14 +159,14 @@ export default function TestApp() {
     void tg;
   }
 
-  // ✅ iPhone safe-area: увеличено, чтобы заголовок не терялся в full screen
+  // ✅ ИЗМЕНЕНО: ещё больше safe-area сверху для iPhone ("ОТКРЫТЬ" из списка чатов)
   const shellStyle: React.CSSProperties = {
     maxWidth: 720,
     margin: "0 auto",
     paddingLeft: 16,
     paddingRight: 16,
     paddingBottom: 22,
-    paddingTop: "max(calc(env(safe-area-inset-top) + 32px), 64px)",
+    paddingTop: "max(calc(env(safe-area-inset-top) + 44px), 84px)",
   };
 
   return (
@@ -162,12 +177,20 @@ export default function TestApp() {
 
       {stage === "start" && (
         <GlassCard>
-          <h1 style={{ marginTop: 0, marginBottom: 10, fontSize: 22, letterSpacing: 0.2 }}>
+          <h1
+            style={{
+              marginTop: 0,
+              marginBottom: 10,
+              fontSize: 22,
+              letterSpacing: 0.2,
+            }}
+          >
             Тест по психотипам (4 цвета)
           </h1>
 
           <p style={{ marginTop: 0, opacity: 0.88, lineHeight: 1.45 }}>
-            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение: 0 (не про меня) … 3 (точно про меня).
+            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение:
+            0 (не про меня) … 3 (точно про меня).
           </p>
 
           <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
@@ -185,8 +208,12 @@ export default function TestApp() {
                     <li style={li}>умеет давить и ускорять</li>
                   </ul>
 
-                  <p style={p1}><b>Мотивация:</b> победа, влияние, достижение целей.</p>
-                  <p style={p1}><b>Триггеры:</b> медлительность, слабость, неопределённость.</p>
+                  <p style={p1}>
+                    <b>Мотивация:</b> победа, влияние, достижение целей.
+                  </p>
+                  <p style={p1}>
+                    <b>Триггеры:</b> медлительность, слабость, неопределённость.
+                  </p>
                 </>
               }
             />
@@ -195,7 +222,9 @@ export default function TestApp() {
               title="🟡 Жёлтый — энергия, идеи, общение"
               body={
                 <>
-                  <p style={p0}>Кто это: вдохновитель, генератор идей, коммуникатор.</p>
+                  <p style={p0}>
+                    Кто это: вдохновитель, генератор идей, коммуникатор.
+                  </p>
 
                   <div style={h}>Сильные стороны:</div>
                   <ul style={ul}>
@@ -205,8 +234,12 @@ export default function TestApp() {
                     <li style={li}>умеет зажигать людей</li>
                   </ul>
 
-                  <p style={p1}><b>Мотивация:</b> признание, свобода, эмоции.</p>
-                  <p style={p1}><b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.</p>
+                  <p style={p1}>
+                    <b>Мотивация:</b> признание, свобода, эмоции.
+                  </p>
+                  <p style={p1}>
+                    <b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.
+                  </p>
                 </>
               }
             />
@@ -225,8 +258,12 @@ export default function TestApp() {
                     <li style={li}>умеет слушать</li>
                   </ul>
 
-                  <p style={p1}><b>Мотивация:</b> гармония, безопасность, стабильность.</p>
-                  <p style={p1}><b>Триггеры:</b> конфликты, давление, резкие изменения.</p>
+                  <p style={p1}>
+                    <b>Мотивация:</b> гармония, безопасность, стабильность.
+                  </p>
+                  <p style={p1}>
+                    <b>Триггеры:</b> конфликты, давление, резкие изменения.
+                  </p>
                 </>
               }
             />
@@ -235,7 +272,9 @@ export default function TestApp() {
               title="🔵 Синий — логика, анализ, системность"
               body={
                 <>
-                  <p style={p0}>Кто это: аналитик, стратег, системный мыслитель.</p>
+                  <p style={p0}>
+                    Кто это: аналитик, стратег, системный мыслитель.
+                  </p>
 
                   <div style={h}>Сильные стороны:</div>
                   <ul style={ul}>
@@ -245,8 +284,12 @@ export default function TestApp() {
                     <li style={li}>высокий стандарт качества</li>
                   </ul>
 
-                  <p style={p1}><b>Мотивация:</b> точность, факты, компетентность.</p>
-                  <p style={p1}><b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.</p>
+                  <p style={p1}>
+                    <b>Мотивация:</b> точность, факты, компетентность.
+                  </p>
+                  <p style={p1}>
+                    <b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.
+                  </p>
                 </>
               }
             />
@@ -270,7 +313,14 @@ export default function TestApp() {
 
       {stage === "test" && (
         <GlassCard>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              gap: 12,
+            }}
+          >
             <div style={{ fontSize: 13, opacity: 0.75 }}>
               Вопрос {index + 1} / {MAX_Q}
             </div>
@@ -283,26 +333,40 @@ export default function TestApp() {
             {q.text}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 16 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 10,
+              marginTop: 16,
+            }}
+          >
             <GlassAnswerButton active={selected === 0} onClick={() => setAnswer(0)}>
               0
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>не про меня</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
+                не про меня
+              </span>
             </GlassAnswerButton>
             <GlassAnswerButton active={selected === 1} onClick={() => setAnswer(1)}>
               1
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>иногда</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
+                иногда
+              </span>
             </GlassAnswerButton>
             <GlassAnswerButton active={selected === 2} onClick={() => setAnswer(2)}>
               2
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>часто</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
+                часто
+              </span>
             </GlassAnswerButton>
             <GlassAnswerButton active={selected === 3} onClick={() => setAnswer(3)}>
               3
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>это я</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
+                это я
+              </span>
             </GlassAnswerButton>
           </div>
 
-          {/* ✅ добавил "Начать сначала" */}
           <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
             <GlassButton variant="ghost" onClick={reset}>
               Начать сначала
@@ -529,7 +593,6 @@ function GlassAnswerButton({
   );
 }
 
-/* ✅ управляемая раскрывашка + поворот стрелки */
 function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
@@ -576,11 +639,7 @@ function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode
         </span>
       </button>
 
-      {open && (
-        <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.9)" }}>
-          {body}
-        </div>
-      )}
+      {open && <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.9)" }}>{body}</div>}
     </div>
   );
 }
