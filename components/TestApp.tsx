@@ -144,7 +144,7 @@ export default function TestApp() {
     void tg;
   }
 
-  // 🍏 Liquid Glass shell + iPhone safe-area
+  // ✅ iPhone safe-area + liquid glass spacing
   const shellStyle: React.CSSProperties = {
     maxWidth: 720,
     margin: "0 auto",
@@ -170,18 +170,87 @@ export default function TestApp() {
             Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение: 0 (не про меня) … 3 (точно про меня).
           </p>
 
-          <div
-            style={{
-              marginTop: 14,
-              display: "grid",
-              gap: 10,
-              fontSize: 14,
-            }}
-          >
-            <GlassRow>🔴 <b>Красные</b> — результат, скорость, лидерство</GlassRow>
-            <GlassRow>🟡 <b>Жёлтые</b> — энергия, идеи, общение</GlassRow>
-            <GlassRow>🟢 <b>Зелёные</b> — стабильность, поддержка, команда</GlassRow>
-            <GlassRow>🔵 <b>Синие</b> — логика, анализ, системность</GlassRow>
+          {/* ✅ РАСКРЫВАЕМЫЙ СПИСОК ЦВЕТОВ */}
+          <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
+            <GlassDisclosure
+              title="🔴 Красный — результат, скорость, лидерство"
+              body={
+                <>
+                  <p style={p0}>Кто это: лидер, драйвер, человек действия.</p>
+
+                  <div style={h}>Сильные стороны:</div>
+                  <ul style={ul}>
+                    <li style={li}>быстро принимает решения</li>
+                    <li style={li}>не боится ответственности</li>
+                    <li style={li}>нацелен на результат</li>
+                    <li style={li}>умеет давить и ускорять</li>
+                  </ul>
+
+                  <p style={p1}><b>Мотивация:</b> победа, влияние, достижение целей.</p>
+                  <p style={p1}><b>Триггеры:</b> медлительность, слабость, неопределённость.</p>
+                </>
+              }
+            />
+
+            <GlassDisclosure
+              title="🟡 Жёлтый — энергия, идеи, общение"
+              body={
+                <>
+                  <p style={p0}>Кто это: вдохновитель, генератор идей, коммуникатор.</p>
+
+                  <div style={h}>Сильные стороны:</div>
+                  <ul style={ul}>
+                    <li style={li}>харизма</li>
+                    <li style={li}>лёгкость в общении</li>
+                    <li style={li}>креатив</li>
+                    <li style={li}>умеет зажигать людей</li>
+                  </ul>
+
+                  <p style={p1}><b>Мотивация:</b> признание, свобода, эмоции.</p>
+                  <p style={p1}><b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.</p>
+                </>
+              }
+            />
+
+            <GlassDisclosure
+              title="🟢 Зелёный — стабильность, поддержка, команда"
+              body={
+                <>
+                  <p style={p0}>Кто это: командный игрок, дипломат, опора.</p>
+
+                  <div style={h}>Сильные стороны:</div>
+                  <ul style={ul}>
+                    <li style={li}>терпение</li>
+                    <li style={li}>надёжность</li>
+                    <li style={li}>эмпатия</li>
+                    <li style={li}>умеет слушать</li>
+                  </ul>
+
+                  <p style={p1}><b>Мотивация:</b> гармония, безопасность, стабильность.</p>
+                  <p style={p1}><b>Триггеры:</b> конфликты, давление, резкие изменения.</p>
+                </>
+              }
+            />
+
+            <GlassDisclosure
+              title="🔵 Синий — логика, анализ, системность"
+              body={
+                <>
+                  <p style={p0}>Кто это: аналитик, стратег, системный мыслитель.</p>
+
+                  <div style={h}>Сильные стороны:</div>
+                  <ul style={ul}>
+                    <li style={li}>внимание к деталям</li>
+                    <li style={li}>логика</li>
+                    <li style={li}>структурность</li>
+                    <li style={li}>высокий стандарт качества</li>
+                  </ul>
+
+                  <p style={p1}><b>Мотивация:</b> точность, факты, компетентность.</p>
+                  <p style={p1}><b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.</p>
+                </>
+              }
+            />
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
@@ -281,6 +350,13 @@ export default function TestApp() {
   );
 }
 
+/* ---------- текстовые стили для раскрывашек ---------- */
+const p0: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
+const p1: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
+const h: React.CSSProperties = { marginTop: 10, fontWeight: 800, opacity: 0.9 };
+const ul: React.CSSProperties = { margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, opacity: 0.92 };
+const li: React.CSSProperties = { marginTop: 4 };
+
 /* ===================== 🍏 Liquid Glass UI ===================== */
 
 function AmbientBackground() {
@@ -344,23 +420,6 @@ function GlassInset({ children }: { children: React.ReactNode }) {
         border: "1px solid rgba(255,255,255,0.12)",
         backdropFilter: "blur(14px) saturate(140%)",
         WebkitBackdropFilter: "blur(14px) saturate(140%)",
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function GlassRow({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        padding: "10px 12px",
-        borderRadius: 16,
-        background: "rgba(0,0,0,0.18)",
-        border: "1px solid rgba(255,255,255,0.10)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
       }}
     >
       {children}
@@ -459,6 +518,42 @@ function GlassAnswerButton({
     >
       {children}
     </button>
+  );
+}
+
+/* ✅ раскрывашка на базе <details> */
+function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode }) {
+  return (
+    <details
+      style={{
+        borderRadius: 16,
+        background: "rgba(0,0,0,0.18)",
+        border: "1px solid rgba(255,255,255,0.10)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        overflow: "hidden",
+      }}
+    >
+      <summary
+        style={{
+          listStyle: "none",
+          cursor: "pointer",
+          padding: "10px 12px",
+          userSelect: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          color: "rgba(255,255,255,0.92)",
+          fontWeight: 700,
+        }}
+      >
+        <span>{title}</span>
+        <span style={{ opacity: 0.7, fontWeight: 900 }}>⌄</span>
+      </summary>
+
+      <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.9)" }}>{body}</div>
+    </details>
   );
 }
 
