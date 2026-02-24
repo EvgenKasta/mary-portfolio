@@ -605,36 +605,31 @@ function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode
 /* ===================== Existing logic components ===================== */
 
 function Header({ progress }: { progress?: number }) {
+  if (typeof progress !== "number") return null;
+
   return (
     <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-        <div style={{ fontWeight: 800, letterSpacing: 0.3, color: "rgba(255,255,255,0.92)" }}>DISC Colors</div>
-        <div style={{ fontSize: 12, opacity: 0.7, color: "rgba(255,255,255,0.8)" }}>Mini App</div>
-      </div>
-
-      {typeof progress === "number" && (
+      <div
+        style={{
+          marginTop: 10,
+          height: 10,
+          borderRadius: 999,
+          background: "rgba(255,255,255,0.10)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          overflow: "hidden",
+        }}
+      >
         <div
           style={{
-            marginTop: 10,
-            height: 10,
+            width: `${progress}%`,
+            height: "100%",
             borderRadius: 999,
-            background: "rgba(255,255,255,0.10)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            overflow: "hidden",
+            background: "rgba(255,255,255,0.75)",
           }}
-        >
-          <div
-            style={{
-              width: `${progress}%`,
-              height: "100%",
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.75)",
-            }}
-          />
-        </div>
-      )}
+        />
+      </div>
     </div>
   );
 }
