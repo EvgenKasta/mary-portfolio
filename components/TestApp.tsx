@@ -53,7 +53,10 @@ export default function TestApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers, index, stage }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ answers, index, stage })
+      );
     } catch {
       // ignore
     }
@@ -65,6 +68,12 @@ export default function TestApp() {
     const answeredCount = Object.keys(answers).length;
     return Math.round((answeredCount / MAX_Q) * 100);
   }, [answers]);
+
+  // ✅ ДОБАВИЛ: флаг завершения теста (все 40 ответов)
+  const isComplete = useMemo(
+    () => Object.keys(answers).length >= MAX_Q,
+    [answers]
+  );
 
   const canPrev = stage === "test" && index > 0;
   const canNext = stage === "test" && index < MAX_Q - 1;
@@ -117,9 +126,11 @@ export default function TestApp() {
   function shareText() {
     const top1 = ranked[0];
     const top2 = ranked[1];
-    const text = `Мой профиль: ${colorEmoji(top1.color)} ${colorLabel(top1.color)} (${top1.value}) + ${colorEmoji(
+    const text = `Мой профиль: ${colorEmoji(top1.color)} ${colorLabel(
+      top1.color
+    )} (${top1.value}) + ${colorEmoji(top2.color)} ${colorLabel(
       top2.color
-    )} ${colorLabel(top2.color)} (${top2.value}).\n\nПройти тест: ${
+    )} (${top2.value}).\n\nПройти тест: ${
       typeof window !== "undefined" ? window.location.href : ""
     }`;
     return text;
@@ -157,17 +168,30 @@ export default function TestApp() {
 
       {stage === "start" && (
         <Card>
-          <h1 style={{ marginTop: 0, fontSize: 22 }}>Тест по психотипам (4 цвета)</h1>
+          <h1 style={{ marginTop: 0, fontSize: 22 }}>
+            Тест по психотипам (4 цвета)
+          </h1>
 
           <p style={{ opacity: 0.9, lineHeight: 1.4 }}>
-            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение: 0 (не про меня) … 3 (точно про меня).
+            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение:
+            0 (не про меня) … 3 (точно про меня).
           </p>
 
-          <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
-            <div>🔴 <b>Красные</b> — результат, скорость, лидерство</div>
-            <div>🟡 <b>Жёлтые</b> — энергия, идеи, общение</div>
-            <div>🟢 <b>Зелёные</b> — стабильность, поддержка, команда</div>
-            <div>🔵 <b>Синие</b> — логика, анализ, системность</div>
+          <div
+            style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}
+          >
+            <div>
+              🔴 <b>Красные</b> — результат, скорость, лидерство
+            </div>
+            <div>
+              🟡 <b>Жёлтые</b> — энергия, идеи, общение
+            </div>
+            <div>
+              🟢 <b>Зелёные</b> — стабильность, поддержка, команда
+            </div>
+            <div>
+              🔵 <b>Синие</b> — логика, анализ, системность
+            </div>
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
@@ -181,38 +205,65 @@ export default function TestApp() {
           </div>
 
           <div style={{ marginTop: 12, opacity: 0.7, fontSize: 12 }}>
-            * Это упрощённая модель (DISC-подобная). Результат — подсказка, не диагноз.
+            * Это упрощённая модель (DISC-подобная). Результат — подсказка, не
+            диагноз.
           </div>
         </Card>
       )}
 
       {stage === "test" && (
         <Card>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              gap: 12,
+            }}
+          >
             <div style={{ fontSize: 14, opacity: 0.8 }}>
               Вопрос {index + 1} / {MAX_Q}
             </div>
-            <div style={{ fontSize: 12, opacity: 0.7 }}>Ответов: {Object.keys(answers).length}</div>
+            <div style={{ fontSize: 12, opacity: 0.7 }}>
+              Ответов: {Object.keys(answers).length}
+            </div>
           </div>
 
-          <div style={{ marginTop: 10, fontSize: 18, lineHeight: 1.35 }}>{q.text}</div>
+          <div style={{ marginTop: 10, fontSize: 18, lineHeight: 1.35 }}>
+            {q.text}
+          </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 16 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 10,
+              marginTop: 16,
+            }}
+          >
             <AnswerButton active={selected === 0} onClick={() => setAnswer(0)}>
               0
-              <span style={{ display: "block", fontSize: 12, opacity: 0.75 }}>не про меня</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.75 }}>
+                не про меня
+              </span>
             </AnswerButton>
             <AnswerButton active={selected === 1} onClick={() => setAnswer(1)}>
               1
-              <span style={{ display: "block", fontSize: 12, opacity: 0.75 }}>иногда</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.75 }}>
+                иногда
+              </span>
             </AnswerButton>
             <AnswerButton active={selected === 2} onClick={() => setAnswer(2)}>
               2
-              <span style={{ display: "block", fontSize: 12, opacity: 0.75 }}>часто</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.75 }}>
+                часто
+              </span>
             </AnswerButton>
             <AnswerButton active={selected === 3} onClick={() => setAnswer(3)}>
               3
-              <span style={{ display: "block", fontSize: 12, opacity: 0.75 }}>это я</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.75 }}>
+                это я
+              </span>
             </AnswerButton>
           </div>
 
@@ -224,7 +275,9 @@ export default function TestApp() {
               Вперёд
             </Button>
             <div style={{ flex: 1 }} />
-            <Button onClick={finish}>Результат</Button>
+
+            {/* ✅ ИЗМЕНЕНО: кнопка "Результат" только после 40 ответов */}
+            {isComplete && <Button onClick={finish}>Результат</Button>}
           </div>
 
           <div style={{ marginTop: 10, opacity: 0.65, fontSize: 12 }}>
@@ -235,14 +288,23 @@ export default function TestApp() {
 
       {stage === "result" && (
         <Card>
-          <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>Результат</h2>
+          <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>
+            Результат
+          </h2>
 
           <ScoreRow color="red" value={scores.red} />
           <ScoreRow color="yellow" value={scores.yellow} />
           <ScoreRow color="green" value={scores.green} />
           <ScoreRow color="blue" value={scores.blue} />
 
-          <div style={{ marginTop: 14, padding: 12, borderRadius: 14, background: "rgba(255,255,255,0.06)" }}>
+          <div
+            style={{
+              marginTop: 14,
+              padding: 12,
+              borderRadius: 14,
+              background: "rgba(255,255,255,0.06)",
+            }}
+          >
             <TopSummary ranked={ranked} />
           </div>
 
@@ -264,13 +326,27 @@ export default function TestApp() {
 function Header({ progress }: { progress?: number }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
         <div style={{ fontWeight: 700, letterSpacing: 0.2 }}>DISC Colors</div>
         <div style={{ fontSize: 12, opacity: 0.7 }}>Mini App</div>
       </div>
 
       {typeof progress === "number" && (
-        <div style={{ marginTop: 10, height: 10, background: "rgba(255,255,255,0.08)", borderRadius: 999 }}>
+        <div
+          style={{
+            marginTop: 10,
+            height: 10,
+            background: "rgba(255,255,255,0.08)",
+            borderRadius: 999,
+          }}
+        >
           <div
             style={{
               width: `${progress}%`,
@@ -349,7 +425,9 @@ function AnswerButton({
       style={{
         borderRadius: 14,
         padding: 12,
-        border: active ? "1px solid rgba(255,255,255,0.65)" : "1px solid rgba(255,255,255,0.14)",
+        border: active
+          ? "1px solid rgba(255,255,255,0.65)"
+          : "1px solid rgba(255,255,255,0.14)",
         background: active ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.15)",
         color: "#e9eef5",
         cursor: "pointer",
@@ -367,7 +445,13 @@ function ScoreRow({ color, value }: { color: Color; value: number }) {
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
         <div style={{ fontWeight: 700 }}>
           {colorEmoji(color)} {colorLabel(color)}
         </div>
@@ -375,7 +459,14 @@ function ScoreRow({ color, value }: { color: Color; value: number }) {
           {value} / {max}
         </div>
       </div>
-      <div style={{ marginTop: 6, height: 10, background: "rgba(255,255,255,0.08)", borderRadius: 999 }}>
+      <div
+        style={{
+          marginTop: 6,
+          height: 10,
+          background: "rgba(255,255,255,0.08)",
+          borderRadius: 999,
+        }}
+      >
         <div
           style={{
             width: `${pct}%`,
@@ -399,15 +490,27 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
   return (
     <div>
       <div style={{ fontSize: 16, fontWeight: 800 }}>
-        Твой профиль: {colorEmoji(top1.color)} {colorLabel(top1.color)} + {colorEmoji(top2.color)}{" "}
-        {colorLabel(top2.color)}
+        Твой профиль: {colorEmoji(top1.color)} {colorLabel(top1.color)} +{" "}
+        {colorEmoji(top2.color)} {colorLabel(top2.color)}
       </div>
 
       <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-        <TipBlock title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`} items={t1.strengths} />
-        <TipBlock title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`} items={t2.strengths} />
-        <TipBlock title="Триггеры" items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
-        <TipBlock title="Как с тобой общаться" items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
+        <TipBlock
+          title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`}
+          items={t1.strengths}
+        />
+        <TipBlock
+          title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`}
+          items={t2.strengths}
+        />
+        <TipBlock
+          title="Триггеры"
+          items={[...t1.triggers, ...t2.triggers].slice(0, 3)}
+        />
+        <TipBlock
+          title="Как с тобой общаться"
+          items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)}
+        />
       </div>
     </div>
   );
