@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { QUESTIONS_RU } from "../lib/questions.ru";
-import { computeScores, rankColors, colorEmoji, colorLabel, shortTips, type Color } from "../lib/scoring";
+import {
+  computeScores,
+  rankColors,
+  colorEmoji,
+  colorLabel,
+  shortTips,
+  type Color,
+} from "../lib/scoring";
 import { tgSafeInit, getTgWebApp } from "../lib/telegram";
 
 type Stage = "start" | "test" | "result";
@@ -30,7 +37,11 @@ export default function TestApp() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as { answers?: Record<number, number>; index?: number; stage?: Stage };
+        const parsed = JSON.parse(raw) as {
+          answers?: Record<number, number>;
+          index?: number;
+          stage?: Stage;
+        };
         if (parsed.answers) setAnswers(parsed.answers);
         if (typeof parsed.index === "number") setIndex(parsed.index);
         if (parsed.stage) setStage(parsed.stage);
@@ -108,7 +119,9 @@ export default function TestApp() {
     const top2 = ranked[1];
     const text = `Мой профиль: ${colorEmoji(top1.color)} ${colorLabel(top1.color)} (${top1.value}) + ${colorEmoji(
       top2.color
-    )} ${colorLabel(top2.color)} (${top2.value}).\n\nПройти тест: ${typeof window !== "undefined" ? window.location.href : ""}`;
+    )} ${colorLabel(top2.color)} (${top2.value}).\n\nПройти тест: ${
+      typeof window !== "undefined" ? window.location.href : ""
+    }`;
     return text;
   }
 
@@ -116,12 +129,10 @@ export default function TestApp() {
     const tg = getTgWebApp();
     const text = shareText();
 
-    // Telegram: можно просто скопировать (универсально)
     try {
       await navigator.clipboard.writeText(text);
       alert(isTg ? "Скопировано. Вставь в чат и отправь 👍" : "Скопировано 👍");
     } catch {
-      // fallback
       const ta = document.createElement("textarea");
       ta.value = text;
       document.body.appendChild(ta);
@@ -131,7 +142,6 @@ export default function TestApp() {
       alert("Скопировано 👍");
     }
 
-    // Если хочешь отправку в чат через бот — добавим (нужен бекенд/бот endpoint).
     void tg;
   }
 
@@ -147,13 +157,22 @@ export default function TestApp() {
 
       {stage === "start" && (
         <Card>
-          <h1 style={{ marginTop: 0, fontSize: 22 }}>Тест по цветам поведения</h1>
+          <h1 style={{ marginTop: 0, fontSize: 22 }}>Тест по психотипам (4 цвета)</h1>
+
           <p style={{ opacity: 0.9, lineHeight: 1.4 }}>
-            40 утверждений. Оцени каждое: 0 (не про меня) … 3 (точно про меня).
+            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение: 0 (не про меня) … 3 (точно про меня).
           </p>
 
-          <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-            <Button onClick={start}>Начать</Button>
+          <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
+            <div>🔴 <b>Красные</b> — результат, скорость, лидерство</div>
+            <div>🟡 <b>Жёлтые</b> — энергия, идеи, общение</div>
+            <div>🟢 <b>Зелёные</b> — стабильность, поддержка, команда</div>
+            <div>🔵 <b>Синие</b> — логика, анализ, системность</div>
+          </div>
+
+          <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
+            <Button onClick={start}>Начать тест</Button>
+
             {Object.keys(answers).length > 0 && (
               <Button variant="ghost" onClick={() => setStage("test")}>
                 Продолжить
@@ -352,7 +371,9 @@ function ScoreRow({ color, value }: { color: Color; value: number }) {
         <div style={{ fontWeight: 700 }}>
           {colorEmoji(color)} {colorLabel(color)}
         </div>
-        <div style={{ opacity: 0.85 }}>{value} / {max}</div>
+        <div style={{ opacity: 0.85 }}>
+          {value} / {max}
+        </div>
       </div>
       <div style={{ marginTop: 6, height: 10, background: "rgba(255,255,255,0.08)", borderRadius: 999 }}>
         <div
@@ -385,8 +406,8 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
       <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
         <TipBlock title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`} items={t1.strengths} />
         <TipBlock title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`} items={t2.strengths} />
-        <TipBlock title={`Триггеры`} items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
-        <TipBlock title={`Как с тобой общаться`} items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
+        <TipBlock title="Триггеры" items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
+        <TipBlock title="Как с тобой общаться" items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
       </div>
     </div>
   );
