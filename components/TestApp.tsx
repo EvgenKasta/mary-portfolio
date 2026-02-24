@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { QUESTIONS_RU } from "../lib/questions.ru";
 import {
   computeScores,
@@ -144,14 +144,14 @@ export default function TestApp() {
     void tg;
   }
 
-  // ✅ iPhone safe-area + liquid glass spacing
+  // ✅ iPhone safe-area: увеличено, чтобы заголовок не терялся в full screen
   const shellStyle: React.CSSProperties = {
     maxWidth: 720,
     margin: "0 auto",
     paddingLeft: 16,
     paddingRight: 16,
     paddingBottom: 22,
-    paddingTop: "calc(env(safe-area-inset-top) + 16px)",
+    paddingTop: "max(calc(env(safe-area-inset-top) + 32px), 64px)",
   };
 
   return (
@@ -170,7 +170,6 @@ export default function TestApp() {
             Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение: 0 (не про меня) … 3 (точно про меня).
           </p>
 
-          {/* ✅ РАСКРЫВАЕМЫЙ СПИСОК ЦВЕТОВ */}
           <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
             <GlassDisclosure
               title="🔴 Красный — результат, скорость, лидерство"
@@ -303,15 +302,23 @@ export default function TestApp() {
             </GlassAnswerButton>
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-            <GlassButton variant="ghost" disabled={!canPrev} onClick={prev}>
-              Назад
+          {/* ✅ добавил "Начать сначала" */}
+          <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
+            <GlassButton variant="ghost" onClick={reset}>
+              Начать сначала
             </GlassButton>
-            <GlassButton variant="ghost" disabled={!canNext} onClick={next}>
-              Вперёд
-            </GlassButton>
+
             <div style={{ flex: 1 }} />
-            {isComplete && <GlassButton onClick={finish}>Результат</GlassButton>}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <GlassButton variant="ghost" disabled={!canPrev} onClick={prev}>
+                Назад
+              </GlassButton>
+              <GlassButton variant="ghost" disabled={!canNext} onClick={next}>
+                Вперёд
+              </GlassButton>
+              {isComplete && <GlassButton onClick={finish}>Результат</GlassButton>}
+            </div>
           </div>
 
           <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>
@@ -350,7 +357,7 @@ export default function TestApp() {
   );
 }
 
-/* ---------- текстовые стили для раскрывашек ---------- */
+/* ---------- текстовые стили ---------- */
 const p0: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
 const p1: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
 const h: React.CSSProperties = { marginTop: 10, fontWeight: 800, opacity: 0.9 };
@@ -447,6 +454,7 @@ function GlassButton({
     fontWeight: 700,
     letterSpacing: 0.2,
     transition: "transform 0.08s ease, filter 0.08s ease",
+    whiteSpace: "nowrap",
   };
 
   const style: React.CSSProperties =
@@ -521,10 +529,12 @@ function GlassAnswerButton({
   );
 }
 
-/* ✅ раскрывашка на базе <details> */
+/* ✅ управляемая раскрывашка + поворот стрелки */
 function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <details
+    <div
       style={{
         borderRadius: 16,
         background: "rgba(0,0,0,0.18)",
@@ -534,9 +544,12 @@ function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode
         overflow: "hidden",
       }}
     >
-      <summary
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
         style={{
-          listStyle: "none",
+          width: "100%",
+          textAlign: "left",
           cursor: "pointer",
           padding: "10px 12px",
           userSelect: "none",
@@ -545,15 +558,30 @@ function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode
           justifyContent: "space-between",
           gap: 10,
           color: "rgba(255,255,255,0.92)",
-          fontWeight: 700,
+          fontWeight: 800,
+          background: "transparent",
+          border: "none",
         }}
       >
         <span>{title}</span>
-        <span style={{ opacity: 0.7, fontWeight: 900 }}>⌄</span>
-      </summary>
+        <span
+          style={{
+            opacity: 0.7,
+            fontWeight: 900,
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 180ms ease",
+          }}
+        >
+          ⌄
+        </span>
+      </button>
 
-      <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.9)" }}>{body}</div>
-    </details>
+      {open && (
+        <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.9)" }}>
+          {body}
+        </div>
+      )}
+    </div>
   );
 }
 
