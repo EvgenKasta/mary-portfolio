@@ -1,4 +1,4 @@
-import TestApp from "@/components/TestApp";
+import TestApp from "../components/TestApp";
 
 export default function Page() {
   return <TestApp />;
