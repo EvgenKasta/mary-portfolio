@@ -52,10 +52,7 @@ export default function TestApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ answers, index, stage })
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers, index, stage }));
     } catch {
       // ignore
     }
@@ -68,10 +65,7 @@ export default function TestApp() {
     return Math.round((answeredCount / MAX_Q) * 100);
   }, [answers]);
 
-  const isComplete = useMemo(
-    () => Object.keys(answers).length >= MAX_Q,
-    [answers]
-  );
+  const isComplete = useMemo(() => Object.keys(answers).length >= MAX_Q, [answers]);
 
   const canPrev = stage === "test" && index > 0;
   const canNext = stage === "test" && index < MAX_Q - 1;
@@ -97,29 +91,6 @@ export default function TestApp() {
     }
   }
 
-  function setAnswer(value: number) {
-    const v = clampScore(value);
-    const id = q.id;
-    setAnswers((prev) => ({ ...prev, [id]: v }));
-
-    if (index < MAX_Q - 1) setIndex((i) => i + 1);
-    else setStage("result");
-  }
-
-  function prev() {
-    if (!canPrev) return;
-    setIndex((i) => i - 1);
-  }
-
-  function next() {
-    if (!canNext) return;
-    setIndex((i) => i + 1);
-  }
-
-  function finish() {
-    setStage("result");
-  }
-
   // ✅ ИЗМЕНЕНО: копируем полный результат + ссылка на бот
   function shareText() {
     const top1 = ranked[0];
@@ -137,6 +108,55 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
 🔵 Синий: ${scores.blue}/30
 
 Пройти тест: ${botLink}`;
+  }
+
+  // ✅ КУСОК #1: уведомление владельца (тебя) через /api/notify-owner
+  async function notifyOwner() {
+    try {
+      const tg = getTgWebApp();
+      const initData = tg?.initData || "";
+      if (!initData) return; // если открыли не из Telegram — нечего отправлять
+
+      const text = shareText();
+
+      await fetch("/api/notify-owner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData, text }),
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  function setAnswer(value: number) {
+    const v = clampScore(value);
+    const id = q.id;
+
+    setAnswers((prev) => ({ ...prev, [id]: v }));
+
+    // ✅ КУСОК #2: при последнем ответе — сразу показываем результат и уведомляем владельца
+    if (index < MAX_Q - 1) {
+      setIndex((i) => i + 1);
+    } else {
+      setStage("result");
+      void notifyOwner();
+    }
+  }
+
+  function prev() {
+    if (!canPrev) return;
+    setIndex((i) => i - 1);
+  }
+
+  function next() {
+    if (!canNext) return;
+    setIndex((i) => i + 1);
+  }
+
+  function finish() {
+    setStage("result");
+    if (isComplete) void notifyOwner();
   }
 
   async function share() {
@@ -177,20 +197,12 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
 
       {stage === "start" && (
         <GlassCard>
-          <h1
-            style={{
-              marginTop: 0,
-              marginBottom: 10,
-              fontSize: 22,
-              letterSpacing: 0.2,
-            }}
-          >
+          <h1 style={{ marginTop: 0, marginBottom: 10, fontSize: 22, letterSpacing: 0.2 }}>
             Тест по психотипам (4 цвета)
           </h1>
 
           <p style={{ marginTop: 0, opacity: 0.88, lineHeight: 1.45 }}>
-            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение:
-            0 (не про меня) … 3 (точно про меня).
+            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение: 0 (не про меня) … 3 (точно про меня).
           </p>
 
           <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
@@ -199,7 +211,6 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
               body={
                 <>
                   <p style={p0}>Кто это: лидер, драйвер, человек действия.</p>
-
                   <div style={h}>Сильные стороны:</div>
                   <ul style={ul}>
                     <li style={li}>быстро принимает решения</li>
@@ -207,13 +218,8 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
                     <li style={li}>нацелен на результат</li>
                     <li style={li}>умеет давить и ускорять</li>
                   </ul>
-
-                  <p style={p1}>
-                    <b>Мотивация:</b> победа, влияние, достижение целей.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> медлительность, слабость, неопределённость.
-                  </p>
+                  <p style={p1}><b>Мотивация:</b> победа, влияние, достижение целей.</p>
+                  <p style={p1}><b>Триггеры:</b> медлительность, слабость, неопределённость.</p>
                 </>
               }
             />
@@ -222,10 +228,7 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
               title="🟡 Жёлтый — энергия, идеи, общение"
               body={
                 <>
-                  <p style={p0}>
-                    Кто это: вдохновитель, генератор идей, коммуникатор.
-                  </p>
-
+                  <p style={p0}>Кто это: вдохновитель, генератор идей, коммуникатор.</p>
                   <div style={h}>Сильные стороны:</div>
                   <ul style={ul}>
                     <li style={li}>харизма</li>
@@ -233,13 +236,8 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
                     <li style={li}>креатив</li>
                     <li style={li}>умеет зажигать людей</li>
                   </ul>
-
-                  <p style={p1}>
-                    <b>Мотивация:</b> признание, свобода, эмоции.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.
-                  </p>
+                  <p style={p1}><b>Мотивация:</b> признание, свобода, эмоции.</p>
+                  <p style={p1}><b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.</p>
                 </>
               }
             />
@@ -249,7 +247,6 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
               body={
                 <>
                   <p style={p0}>Кто это: командный игрок, дипломат, опора.</p>
-
                   <div style={h}>Сильные стороны:</div>
                   <ul style={ul}>
                     <li style={li}>терпение</li>
@@ -257,13 +254,8 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
                     <li style={li}>эмпатия</li>
                     <li style={li}>умеет слушать</li>
                   </ul>
-
-                  <p style={p1}>
-                    <b>Мотивация:</b> гармония, безопасность, стабильность.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> конфликты, давление, резкие изменения.
-                  </p>
+                  <p style={p1}><b>Мотивация:</b> гармония, безопасность, стабильность.</p>
+                  <p style={p1}><b>Триггеры:</b> конфликты, давление, резкие изменения.</p>
                 </>
               }
             />
@@ -272,10 +264,7 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
               title="🔵 Синий — логика, анализ, системность"
               body={
                 <>
-                  <p style={p0}>
-                    Кто это: аналитик, стратег, системный мыслитель.
-                  </p>
-
+                  <p style={p0}>Кто это: аналитик, стратег, системный мыслитель.</p>
                   <div style={h}>Сильные стороны:</div>
                   <ul style={ul}>
                     <li style={li}>внимание к деталям</li>
@@ -283,13 +272,8 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
                     <li style={li}>структурность</li>
                     <li style={li}>высокий стандарт качества</li>
                   </ul>
-
-                  <p style={p1}>
-                    <b>Мотивация:</b> точность, факты, компетентность.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.
-                  </p>
+                  <p style={p1}><b>Мотивация:</b> точность, факты, компетентность.</p>
+                  <p style={p1}><b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.</p>
                 </>
               }
             />
@@ -313,14 +297,7 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
 
       {stage === "test" && (
         <GlassCard>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              gap: 12,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
             <div style={{ fontSize: 13, opacity: 0.75 }}>
               Вопрос {index + 1} / {MAX_Q}
             </div>
@@ -329,41 +306,24 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
             </div>
           </div>
 
-          <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>
-            {q.text}
-          </div>
+          <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>{q.text}</div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 10,
-              marginTop: 16,
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 16 }}>
             <GlassAnswerButton active={selected === 0} onClick={() => setAnswer(0)}>
               0
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
-                не про меня
-              </span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>не про меня</span>
             </GlassAnswerButton>
             <GlassAnswerButton active={selected === 1} onClick={() => setAnswer(1)}>
               1
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
-                иногда
-              </span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>иногда</span>
             </GlassAnswerButton>
             <GlassAnswerButton active={selected === 2} onClick={() => setAnswer(2)}>
               2
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
-                часто
-              </span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>часто</span>
             </GlassAnswerButton>
             <GlassAnswerButton active={selected === 3} onClick={() => setAnswer(3)}>
               3
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
-                это я
-              </span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>это я</span>
             </GlassAnswerButton>
           </div>
 
@@ -385,9 +345,7 @@ ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
             </div>
           </div>
 
-          <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>
-            Совет: отвечай быстро, как чувствуешь.
-          </div>
+          <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>Совет: отвечай быстро, как чувствуешь.</div>
         </GlassCard>
       )}
 
