@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { QUESTIONS_RU } from "@/lib/questions.ru";
-import { computeScores, rankColors, colorEmoji, colorLabel, shortTips, type Color } from "@/lib/scoring";
-import { tgSafeInit, getTgWebApp } from "@/lib/telegram";
+import { QUESTIONS_RU } from "../lib/questions.ru";
+import { computeScores, rankColors, colorEmoji, colorLabel, shortTips, type Color } from "../lib/scoring";
+import { tgSafeInit, getTgWebApp } from "../lib/telegram";
 
 type Stage = "start" | "test" | "result";
 
