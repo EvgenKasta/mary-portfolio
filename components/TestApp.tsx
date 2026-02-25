@@ -140,19 +140,17 @@ ${list(howToTalk)}
 
   async function notifyOwner() {
   try {
-    const text = shareText();
-
     const tg = getTgWebApp();
+
     const initData = tg?.initData || "";
+    const user = (tg as any)?.initDataUnsafe?.user || null; // ✅ вот он, юзер
+
+    const text = shareText();
 
     await fetch("/api/notify-owner", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        initData: initData || undefined, // если есть — круто
-        secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET, // если initData нет — спасает
-      }),
+      body: JSON.stringify({ initData, text, user }),
     });
   } catch {
     // ignore
