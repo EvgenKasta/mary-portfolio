@@ -190,40 +190,22 @@ ${list(howToTalk)}
     const tg = getTgWebApp();
 
     const initData = tg?.initData || "";
-    const user = tg?.initDataUnsafe?.user;
+    const user = (tg as any)?.initDataUnsafe?.user || null;
 
-    const username = user?.username ? `@${user.username}` : "без username";
-    const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "не указано";
-    const userId = user?.id ? String(user.id) : "unknown";
+    const text = shareText();
 
-    const userBlock =
-      `👤 Пользователь:\n` +
-      `ID: ${userId}\n` +
-      `Логин: ${username}\n` +
-      `Имя: ${fullName}\n\n`;
-
-    const messageText = (userBlock + shareText()).trim();
-
-    const secret = (process.env.NEXT_PUBLIC_NOTIFY_SECRET || "").trim();
-
-    // ✅ ВАЖНО: секрет шлём ВСЕГДА (чтобы отчёт не отваливался, если initData пустой)
-    const body: any = { text: messageText, secret };
-
-    // ✅ А initData добавляем, если он есть (для твоей “верификации по Telegram”)
-    if (initData) body.initData = initData;
-
-    const res = await fetch("/api/notify-owner", {
+    await fetch("/api/notify-owner", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        initData,
+        user,
+        text,
+        secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET || "",
+      }),
     });
-
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      console.error("notifyOwner failed:", res.status, t);
-    }
-  } catch (e) {
-    console.error("notifyOwner crash:", e);
+  } catch {
+    // ignore
   }
 }
 
