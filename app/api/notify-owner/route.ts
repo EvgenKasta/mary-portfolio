@@ -19,6 +19,18 @@ function verifyTelegramInitData(initData: string, botToken: string) {
   return !!hash && hmac === hash;
 }
 
+/* ✅ ДОБАВЛЕНО: достаём user из initData */
+function parseUserFromInitData(initData: string) {
+  try {
+    const params = new URLSearchParams(initData);
+    const userRaw = params.get("user");
+    if (!userRaw) return null;
+    return JSON.parse(userRaw);
+  } catch {
+    return null;
+  }
+}
+
 async function tgSendMessage(text: string) {
   const botToken = process.env.BOT_TOKEN || "";
   const ownerChatId = process.env.OWNER_CHAT_ID || "";
@@ -76,7 +88,19 @@ export async function POST(req: Request) {
         console.error("Bad initData");
         return new Response("Bad initData", { status: 403 });
       }
-      return await tgSendMessage(messageText);
+
+      /* ✅ ДОБАВЛЕНО: добавляем данные пользователя в отчёт */
+      const user = parseUserFromInitData(initData);
+      const username = user?.username ? `@${user.username}` : "без username";
+      const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+
+      const userBlock =
+        `👤 Пользователь:\n` +
+        `ID: ${user?.id ?? "unknown"}\n` +
+        `Логин: ${username}\n` +
+        `Имя: ${fullName || "не указано"}\n\n`;
+
+      return await tgSendMessage(userBlock + messageText);
     }
 
     // ✅ Вариант Б: если initData нет — пускаем по секрету (надёжно во всех кейсах)
