@@ -13,13 +13,11 @@ function verifyTelegramInitData(initData: string, botToken: string) {
     .join("\n");
 
   const secretKey = crypto.createHash("sha256").update(botToken).digest();
-
   const hmac = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
 
   return !!hash && hmac === hash;
 }
 
-/* ✅ ДОБАВЛЕНО: достаём user из initData */
 function parseUserFromInitData(initData: string) {
   try {
     const params = new URLSearchParams(initData);
@@ -29,6 +27,20 @@ function parseUserFromInitData(initData: string) {
   } catch {
     return null;
   }
+}
+
+function formatUserBlock(user: any) {
+  if (!user) return "";
+
+  const username = user?.username ? `@${user.username}` : "без username";
+  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+
+  return (
+    `👤 Пользователь:\n` +
+    `ID: ${user?.id ?? "unknown"}\n` +
+    `Логин: ${username}\n` +
+    `Имя: ${fullName || "не указано"}\n\n`
+  );
 }
 
 async function tgSendMessage(text: string) {
@@ -69,10 +81,11 @@ async function tgSendMessage(text: string) {
 
 export async function POST(req: Request) {
   try {
-    const { initData, text, secret } = (await req.json()) as {
+    const { initData, text, secret, user } = (await req.json()) as {
       initData?: string;
       text?: string;
       secret?: string;
+      user?: any; // ✅ приходит из TMA
     };
 
     const botToken = process.env.BOT_TOKEN || "";
@@ -81,6 +94,10 @@ export async function POST(req: Request) {
     const messageText = String(text || "").trim();
     if (!messageText) return new Response("Empty text", { status: 400 });
 
+    // ✅ Собираем userBlock: сначала из body.user, если нет — пробуем из initData
+    const parsedUser = user || (initData ? parseUserFromInitData(initData) : null);
+    const userBlock = formatUserBlock(parsedUser);
+
     // ✅ Вариант А: если пришёл initData — валидируем по Telegram (как у тебя было)
     if (initData && botToken) {
       const ok = verifyTelegramInitData(initData, botToken);
@@ -88,24 +105,12 @@ export async function POST(req: Request) {
         console.error("Bad initData");
         return new Response("Bad initData", { status: 403 });
       }
-
-      /* ✅ ДОБАВЛЕНО: добавляем данные пользователя в отчёт */
-      const user = parseUserFromInitData(initData);
-      const username = user?.username ? `@${user.username}` : "без username";
-      const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
-
-      const userBlock =
-        `👤 Пользователь:\n` +
-        `ID: ${user?.id ?? "unknown"}\n` +
-        `Логин: ${username}\n` +
-        `Имя: ${fullName || "не указано"}\n\n`;
-
       return await tgSendMessage(userBlock + messageText);
     }
 
     // ✅ Вариант Б: если initData нет — пускаем по секрету (надёжно во всех кейсах)
     if (serverSecret && secret && secret === serverSecret) {
-      return await tgSendMessage(messageText);
+      return await tgSendMessage(userBlock + messageText);
     }
 
     console.error("Unauthorized notify", {
