@@ -2,14 +2,7 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
-type TgUser = {
-  id?: number;
-  username?: string;
-  first_name?: string;
-  last_name?: string;
-  language_code?: string;
-};
-
+/* ---------- verify initData ---------- */
 function verifyTelegramInitData(initData: string, botToken: string) {
   const urlParams = new URLSearchParams(initData);
   const hash = urlParams.get("hash");
@@ -27,18 +20,27 @@ function verifyTelegramInitData(initData: string, botToken: string) {
   return !!hash && hmac === hash;
 }
 
+/* ---------- parse user from initData ---------- */
+type TgUser = {
+  id?: number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  language_code?: string;
+};
+
 function parseUserFromInitData(initData: string): TgUser | null {
   try {
     const params = new URLSearchParams(initData);
     const userRaw = params.get("user");
     if (!userRaw) return null;
-    return JSON.parse(userRaw);
+    return JSON.parse(userRaw) as TgUser;
   } catch {
     return null;
   }
 }
 
-function buildUserBlock(user: TgUser | null) {
+function formatUserBlock(user: TgUser | null) {
   if (!user) {
     return `👤 Пользователь:
 ID: unknown
@@ -47,15 +49,17 @@ ID: unknown
   }
 
   const username = user.username ? `@${user.username}` : "без username";
-  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || "не указано";
-  const id = user.id ?? "unknown";
+  const fullName =
+    [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || "не указано";
 
   return `👤 Пользователь:
-ID: ${id}
+ID: ${user.id ?? "unknown"}
 Логин: ${username}
-Имя: ${fullName}`;
+Имя: ${fullName}
+Язык: ${user.language_code || "—"}`;
 }
 
+/* ---------- tg send ---------- */
 async function tgSendMessage(text: string) {
   const botToken = process.env.BOT_TOKEN || "";
   const ownerChatId = process.env.OWNER_CHAT_ID || "";
@@ -87,11 +91,11 @@ async function tgSendMessage(text: string) {
   return Response.json({ ok: true });
 }
 
+/* ---------- route ---------- */
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as {
+    const { initData, text, secret } = (await req.json()) as {
       initData?: string;
-      user?: TgUser | null;
       text?: string;
       secret?: string;
     };
@@ -99,41 +103,33 @@ export async function POST(req: Request) {
     const botToken = process.env.BOT_TOKEN || "";
     const serverSecret = process.env.NOTIFY_SECRET || "";
 
-    const messageText = String(body.text || "").trim();
+    const messageText = String(text || "").trim();
     if (!messageText) return new Response("Empty text", { status: 400 });
 
-    const initData = String(body.initData || "").trim();
-    const bodyUser = body.user ?? null;
-
-    // 1) Пытаемся авторизоваться через initData (самый правильный путь)
+    // ✅ Вариант A: initData → валидируем и берём user оттуда
     if (initData && botToken) {
       const ok = verifyTelegramInitData(initData, botToken);
-      if (ok) {
-        const initUser = parseUserFromInitData(initData);
-        const user = bodyUser || initUser;
-
-        const finalText = `${buildUserBlock(user)}\n\n${messageText}`;
-        return await tgSendMessage(finalText);
+      if (!ok) {
+        console.error("Bad initData");
+        return new Response("Bad initData", { status: 403 });
       }
 
-      console.error("Bad initData (hash mismatch)");
-      // не возвращаем сразу 403 — даём шанс пройти через secret
-    }
+      const user = parseUserFromInitData(initData);
+      const finalText = `${formatUserBlock(user)}\n\n${messageText}`;
 
-    // 2) Фолбэк через секрет (если initData пустой/битый)
-    if (serverSecret && body.secret && body.secret === serverSecret) {
-      const finalText = `${buildUserBlock(bodyUser)}\n\n${messageText}`;
       return await tgSendMessage(finalText);
     }
 
-    console.error("Unauthorized notify-owner", {
-      hasInitData: !!initData,
-      hasBotToken: !!botToken,
-      hasServerSecret: !!serverSecret,
-      hasSecret: !!body.secret,
-      hasUser: !!bodyUser,
-    });
+    // ✅ Вариант B: без initData → пропускаем по секрету, но юзера тогда НЕ будет (это нормально)
+    if (serverSecret && secret && secret === serverSecret) {
+      return await tgSendMessage(messageText);
+    }
 
+    console.error("Unauthorized notify", {
+      hasInitData: !!initData,
+      hasSecret: !!secret,
+      hasServerSecret: !!serverSecret,
+    });
     return new Response("Unauthorized", { status: 403 });
   } catch (e: any) {
     console.error("notify-owner route error", e);
