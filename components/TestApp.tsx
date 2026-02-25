@@ -23,56 +23,11 @@ function clampScore(v: number) {
   return v;
 }
 
-function detectIos(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent || "";
-  return (
-    /iPhone|iPad|iPod/i.test(ua) ||
-    (navigator.platform === "MacIntel" && (navigator as any).maxTouchPoints > 1)
-  );
-}
-
-function detectTelegram(): boolean {
-  if (typeof window === "undefined") return false;
-  const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
-  const hasTgObj = !!(window as any).Telegram?.WebApp;
-  const isTelegramUA = /Telegram/i.test(ua) || /TelegramWebView/i.test(ua);
-  return hasTgObj || isTelegramUA;
-}
-
-/** ✅ ОПАКОВЫЕ цвета (без альфы) для iOS Telegram safeMode */
-const SAFE = {
-  pageBgTop: "#0B0F16",
-  pageBgBottom: "#070A0F",
-  cardBg: "#121620",
-  insetBg: "#1A2030",
-  disclosureBg: "#1A2030",
-  ghostBtnBg: "#2C3854",
-  ghostBtnBgActive: "#3E4C70",
-  answerBg: "#2A3246",
-  answerBgActive: "#404C68",
-  border: "rgba(255,255,255,0.18)", // границы можно оставлять с альфой, они не “выбеливают”
-};
-
 export default function TestApp() {
   const [stage, setStage] = useState<Stage>("start");
   const [index, setIndex] = useState<number>(0); // 0..39
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isTg, setIsTg] = useState(false);
-
-  // ✅ SAFE MODE: iOS + Telegram (или нет поддержки blur) → убираем стекло полностью
-  const [safeMode, setSafeMode] = useState(false);
-  useEffect(() => {
-    const isiOS = detectIos();
-    const isTelegram = detectTelegram();
-
-    const supportsBackdrop =
-      typeof CSS !== "undefined" &&
-      ((CSS as any).supports?.("backdrop-filter: blur(1px)") ||
-        (CSS as any).supports?.("-webkit-backdrop-filter: blur(1px)"));
-
-    setSafeMode((isiOS && isTelegram) || !supportsBackdrop);
-  }, []);
 
   useEffect(() => {
     const { isTg } = tgSafeInit();
@@ -97,7 +52,10 @@ export default function TestApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers, index, stage }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ answers, index, stage })
+      );
     } catch {
       // ignore
     }
@@ -110,7 +68,10 @@ export default function TestApp() {
     return Math.round((answeredCount / MAX_Q) * 100);
   }, [answers]);
 
-  const isComplete = useMemo(() => Object.keys(answers).length >= MAX_Q, [answers]);
+  const isComplete = useMemo(
+    () => Object.keys(answers).length >= MAX_Q,
+    [answers]
+  );
 
   const canPrev = stage === "test" && index > 0;
   const canNext = stage === "test" && index < MAX_Q - 1;
@@ -136,7 +97,7 @@ export default function TestApp() {
     }
   }
 
-  // ✅ копируем ВЕСЬ результат + пояснение + ссылка
+  // ✅ Копируем ВЕСЬ результат + пояснение + ссылка
   function shareText() {
     const top1 = ranked[0];
     const top2 = ranked[1];
@@ -248,29 +209,36 @@ ${list(howToTalk)}
     paddingRight: 16,
     paddingBottom: 22,
     paddingTop: "max(calc(env(safe-area-inset-top) + 44px), 84px)",
-    color: "rgba(255,255,255,0.92)",
+    color: "rgba(255,255,255,0.95)", // ✅ фикс контраста везде
     WebkitTextSizeAdjust: "100%",
   };
 
   return (
     <div style={shellStyle}>
-      <AmbientBackground safeMode={safeMode} />
+      <AmbientBackground />
 
-      <Header safeMode={safeMode} progress={stage === "test" ? progress : undefined} />
+      <Header progress={stage === "test" ? progress : undefined} />
 
       {stage === "start" && (
-        <GlassCard safeMode={safeMode}>
-          <h1 style={{ marginTop: 0, marginBottom: 10, fontSize: 22, letterSpacing: 0.2 }}>
+        <GlassCard>
+          <h1
+            style={{
+              marginTop: 0,
+              marginBottom: 10,
+              fontSize: 22,
+              letterSpacing: 0.2,
+            }}
+          >
             Тест по психотипам (4 цвета)
           </h1>
 
           <p style={{ marginTop: 0, opacity: 0.88, lineHeight: 1.45 }}>
-            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение: 0 (не про меня) … 3 (точно про меня).
+            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение:
+            0 (не про меня) … 3 (точно про меня).
           </p>
 
           <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
             <GlassDisclosure
-              safeMode={safeMode}
               title="🔴 Красный — результат, скорость, лидерство"
               body={
                 <>
@@ -282,18 +250,23 @@ ${list(howToTalk)}
                     <li style={li}>нацелен на результат</li>
                     <li style={li}>умеет давить и ускорять</li>
                   </ul>
-                  <p style={p1}><b>Мотивация:</b> победа, влияние, достижение целей.</p>
-                  <p style={p1}><b>Триггеры:</b> медлительность, слабость, неопределённость.</p>
+                  <p style={p1}>
+                    <b>Мотивация:</b> победа, влияние, достижение целей.
+                  </p>
+                  <p style={p1}>
+                    <b>Триггеры:</b> медлительность, слабость, неопределённость.
+                  </p>
                 </>
               }
             />
 
             <GlassDisclosure
-              safeMode={safeMode}
               title="🟡 Жёлтый — энергия, идеи, общение"
               body={
                 <>
-                  <p style={p0}>Кто это: вдохновитель, генератор идей, коммуникатор.</p>
+                  <p style={p0}>
+                    Кто это: вдохновитель, генератор идей, коммуникатор.
+                  </p>
                   <div style={h}>Сильные стороны:</div>
                   <ul style={ul}>
                     <li style={li}>харизма</li>
@@ -301,14 +274,18 @@ ${list(howToTalk)}
                     <li style={li}>креатив</li>
                     <li style={li}>умеет зажигать людей</li>
                   </ul>
-                  <p style={p1}><b>Мотивация:</b> признание, свобода, эмоции.</p>
-                  <p style={p1}><b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.</p>
+                  <p style={p1}>
+                    <b>Мотивация:</b> признание, свобода, эмоции.
+                  </p>
+                  <p style={p1}>
+                    <b>Триггеры:</b> рутина, жёсткие рамки, критика без
+                    поддержки.
+                  </p>
                 </>
               }
             />
 
             <GlassDisclosure
-              safeMode={safeMode}
               title="🟢 Зелёный — стабильность, поддержка, команда"
               body={
                 <>
@@ -320,18 +297,23 @@ ${list(howToTalk)}
                     <li style={li}>эмпатия</li>
                     <li style={li}>умеет слушать</li>
                   </ul>
-                  <p style={p1}><b>Мотивация:</b> гармония, безопасность, стабильность.</p>
-                  <p style={p1}><b>Триггеры:</b> конфликты, давление, резкие изменения.</p>
+                  <p style={p1}>
+                    <b>Мотивация:</b> гармония, безопасность, стабильность.
+                  </p>
+                  <p style={p1}>
+                    <b>Триггеры:</b> конфликты, давление, резкие изменения.
+                  </p>
                 </>
               }
             />
 
             <GlassDisclosure
-              safeMode={safeMode}
               title="🔵 Синий — логика, анализ, системность"
               body={
                 <>
-                  <p style={p0}>Кто это: аналитик, стратег, системный мыслитель.</p>
+                  <p style={p0}>
+                    Кто это: аналитик, стратег, системный мыслитель.
+                  </p>
                   <div style={h}>Сильные стороны:</div>
                   <ul style={ul}>
                     <li style={li}>внимание к деталям</li>
@@ -339,108 +321,143 @@ ${list(howToTalk)}
                     <li style={li}>структурность</li>
                     <li style={li}>высокий стандарт качества</li>
                   </ul>
-                  <p style={p1}><b>Мотивация:</b> точность, факты, компетентность.</p>
-                  <p style={p1}><b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.</p>
+                  <p style={p1}>
+                    <b>Мотивация:</b> точность, факты, компетентность.
+                  </p>
+                  <p style={p1}>
+                    <b>Триггеры:</b> хаос, поверхностность, эмоциональное
+                    давление.
+                  </p>
                 </>
               }
             />
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-            <SolidButton safeMode={safeMode} onClick={start}>Начать тест</SolidButton>
+            <GlassButton onClick={start}>Начать тест</GlassButton>
 
             {Object.keys(answers).length > 0 && (
-              <SolidButton safeMode={safeMode} variant="ghost" onClick={() => setStage("test")}>
+              <GlassButton onClick={() => setStage("test")}>
                 Продолжить
-              </SolidButton>
+              </GlassButton>
             )}
           </div>
 
           <div style={{ marginTop: 12, opacity: 0.65, fontSize: 12 }}>
-            * Упрощённая модель (DISC-подобная). Результат — подсказка, не диагноз.
+            * Упрощённая модель (DISC-подобная). Результат — подсказка, не
+            диагноз.
           </div>
         </GlassCard>
       )}
 
       {stage === "test" && (
-        <GlassCard safeMode={safeMode}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+        <GlassCard>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "baseline",
+              gap: 12,
+            }}
+          >
             <div style={{ fontSize: 13, opacity: 0.75 }}>
               Вопрос {index + 1} / {MAX_Q}
             </div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>
+            <div style={{ fontSize: 12, opacity: 0.75 }}>
               Ответов: {Object.keys(answers).length}
             </div>
           </div>
 
-          <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>{q.text}</div>
+          <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>
+            {q.text}
+          </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 16 }}>
-            <AnswerButton safeMode={safeMode} active={selected === 0} onClick={() => setAnswer(0)}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: 10,
+              marginTop: 16,
+            }}
+          >
+            <AnswerButton active={selected === 0} onClick={() => setAnswer(0)}>
               0
-              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>не про меня</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>
+                не про меня
+              </span>
             </AnswerButton>
-            <AnswerButton safeMode={safeMode} active={selected === 1} onClick={() => setAnswer(1)}>
+            <AnswerButton active={selected === 1} onClick={() => setAnswer(1)}>
               1
-              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>иногда</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>
+                иногда
+              </span>
             </AnswerButton>
-            <AnswerButton safeMode={safeMode} active={selected === 2} onClick={() => setAnswer(2)}>
+            <AnswerButton active={selected === 2} onClick={() => setAnswer(2)}>
               2
-              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>часто</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>
+                часто
+              </span>
             </AnswerButton>
-            <AnswerButton safeMode={safeMode} active={selected === 3} onClick={() => setAnswer(3)}>
+            <AnswerButton active={selected === 3} onClick={() => setAnswer(3)}>
               3
-              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>это я</span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>
+                это я
+              </span>
             </AnswerButton>
           </div>
 
-          {/* ✅ ВОТ ЗДЕСЬ: кнопки управления теперь такими же solid как AnswerButton */}
-          <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-            <SolidButton safeMode={safeMode} variant="ghost" onClick={reset}>
-              Начать сначала
-            </SolidButton>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              marginTop: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <GlassButton onClick={reset}>Начать сначала</GlassButton>
 
             <div style={{ flex: 1 }} />
 
             <div style={{ display: "flex", gap: 10 }}>
-              <SolidButton safeMode={safeMode} variant="ghost" disabled={!canPrev} onClick={prev}>
+              <GlassButton disabled={!canPrev} onClick={prev}>
                 Назад
-              </SolidButton>
-              <SolidButton safeMode={safeMode} variant="ghost" disabled={!canNext} onClick={next}>
+              </GlassButton>
+              <GlassButton disabled={!canNext} onClick={next}>
                 Вперёд
-              </SolidButton>
-              {isComplete && <SolidButton safeMode={safeMode} onClick={finish}>Результат</SolidButton>}
+              </GlassButton>
+              {isComplete && <GlassButton onClick={finish}>Результат</GlassButton>}
             </div>
           </div>
 
-          <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>Совет: отвечай быстро, как чувствуешь.</div>
+          <div style={{ marginTop: 10, opacity: 0.7, fontSize: 12 }}>
+            Совет: отвечай быстро, как чувствуешь.
+          </div>
         </GlassCard>
       )}
 
       {stage === "result" && (
-        <GlassCard safeMode={safeMode}>
-          <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>Результат</h2>
+        <GlassCard>
+          <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>
+            Результат
+          </h2>
 
-          <ScoreRow color="red" value={scores.red} safeMode={safeMode} />
-          <ScoreRow color="yellow" value={scores.yellow} safeMode={safeMode} />
-          <ScoreRow color="green" value={scores.green} safeMode={safeMode} />
-          <ScoreRow color="blue" value={scores.blue} safeMode={safeMode} />
+          <ScoreRow color="red" value={scores.red} />
+          <ScoreRow color="yellow" value={scores.yellow} />
+          <ScoreRow color="green" value={scores.green} />
+          <ScoreRow color="blue" value={scores.blue} />
 
-          {/* ✅ Блок рекомендаций: в safeMode теперь полностью OPAQUE */}
           <div style={{ marginTop: 14 }}>
-            <GlassInset safeMode={safeMode}>
+            <GlassInset>
               <TopSummary ranked={ranked} />
             </GlassInset>
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-            <SolidButton safeMode={safeMode} onClick={share}>Поделиться (скопировать)</SolidButton>
-            <SolidButton safeMode={safeMode} variant="ghost" onClick={() => setStage("test")}>
+            <GlassButton onClick={share}>Поделиться (скопировать)</GlassButton>
+            <GlassButton onClick={() => setStage("test")}>
               Вернуться к вопросам
-            </SolidButton>
-            <SolidButton safeMode={safeMode} variant="ghost" onClick={reset}>
-              Пройти заново
-            </SolidButton>
+            </GlassButton>
+            <GlassButton onClick={reset}>Пройти заново</GlassButton>
           </div>
         </GlassCard>
       )}
@@ -449,15 +466,28 @@ ${list(howToTalk)}
 }
 
 /* ---------- текстовые стили ---------- */
-const p0: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
-const p1: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
-const h: React.CSSProperties = { marginTop: 10, fontWeight: 800, opacity: 0.9 };
-const ul: React.CSSProperties = { margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, opacity: 0.92 };
+const p0: React.CSSProperties = {
+  margin: "10px 0 0",
+  opacity: 0.88,
+  lineHeight: 1.45,
+};
+const p1: React.CSSProperties = {
+  margin: "10px 0 0",
+  opacity: 0.88,
+  lineHeight: 1.45,
+};
+const h: React.CSSProperties = { marginTop: 10, fontWeight: 800, opacity: 0.95 };
+const ul: React.CSSProperties = {
+  margin: "6px 0 0 18px",
+  padding: 0,
+  lineHeight: 1.35,
+  opacity: 0.95,
+};
 const li: React.CSSProperties = { marginTop: 4 };
 
-/* ===================== UI ===================== */
+/* ===================== фон ===================== */
 
-function AmbientBackground({ safeMode }: { safeMode: boolean }) {
+function AmbientBackground() {
   return (
     <div
       aria-hidden
@@ -465,64 +495,33 @@ function AmbientBackground({ safeMode }: { safeMode: boolean }) {
         position: "fixed",
         inset: 0,
         zIndex: -1,
-        background: safeMode
-          ? `linear-gradient(180deg, ${SAFE.pageBgTop} 0%, ${SAFE.pageBgBottom} 100%)`
-          : "radial-gradient(900px 500px at 20% 10%, rgba(120,170,255,0.28), transparent 60%)," +
-            "radial-gradient(900px 500px at 80% 20%, rgba(255,120,200,0.22), transparent 55%)," +
-            "radial-gradient(900px 500px at 50% 90%, rgba(120,255,210,0.18), transparent 60%)," +
-            "linear-gradient(180deg, #0B0F16 0%, #070A0F 100%)",
+        background:
+          "radial-gradient(900px 500px at 20% 10%, rgba(120,170,255,0.28), transparent 60%)," +
+          "radial-gradient(900px 500px at 80% 20%, rgba(255,120,200,0.22), transparent 55%)," +
+          "radial-gradient(900px 500px at 50% 90%, rgba(120,255,210,0.18), transparent 60%)," +
+          "linear-gradient(180deg, #0B0F16 0%, #070A0F 100%)",
       }}
     />
   );
 }
 
-function GlassCard({ children, safeMode }: { children: React.ReactNode; safeMode: boolean }) {
+/* ===================== SOLID UI (как кнопки 0–3) ===================== */
+
+function GlassCard({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
         padding: 16,
         borderRadius: 22,
-        backgroundColor: safeMode ? SAFE.cardBg : "rgba(255,255,255,0.08)",
-        border: `1px solid ${SAFE.border}`,
+        backgroundColor: "rgba(26,32,46,0.98)",
+        border: "1px solid rgba(255,255,255,0.18)",
         boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
-        backdropFilter: safeMode ? "none" : "blur(18px) saturate(160%)",
-        WebkitBackdropFilter: safeMode ? "none" : "blur(18px) saturate(160%)",
-        position: "relative",
+        color: "rgba(255,255,255,0.95)",
         overflow: "hidden",
-        color: "rgba(255,255,255,0.92)",
-      }}
-    >
-      {!safeMode && (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: -1,
-            borderRadius: 22,
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.10))",
-            pointerEvents: "none",
-            mixBlendMode: "overlay",
-            opacity: 0.7,
-          }}
-        />
-      )}
-      <div style={{ position: "relative" }}>{children}</div>
-    </div>
-  );
-}
 
-function GlassInset({ children, safeMode }: { children: React.ReactNode; safeMode: boolean }) {
-  return (
-    <div
-      style={{
-        padding: 12,
-        borderRadius: 18,
-        backgroundColor: safeMode ? SAFE.insetBg : "rgba(255,255,255,0.06)",
-        border: `1px solid ${SAFE.border}`,
-        backdropFilter: safeMode ? "none" : "blur(14px) saturate(140%)",
-        WebkitBackdropFilter: safeMode ? "none" : "blur(14px) saturate(140%)",
-        color: "rgba(255,255,255,0.92)",
+        // ❌ никаких стеклянных эффектов
+        backdropFilter: "none",
+        WebkitBackdropFilter: "none",
       }}
     >
       {children}
@@ -530,68 +529,61 @@ function GlassInset({ children, safeMode }: { children: React.ReactNode; safeMod
   );
 }
 
-/**
- * ✅ ВАЖНО:
- * ЭТА кнопка — “как AnswerButton”, solid, без blur.
- * Её используем везде вместо стеклянных ghost-кнопок, которые белели.
- */
-function SolidButton({
+function GlassInset({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        padding: 12,
+        borderRadius: 18,
+        backgroundColor: "rgba(42,50,70,0.98)",
+        border: "1px solid rgba(255,255,255,0.18)",
+        color: "rgba(255,255,255,0.95)",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+
+        // ❌ никаких стеклянных эффектов
+        backdropFilter: "none",
+        WebkitBackdropFilter: "none",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function GlassButton({
   children,
   onClick,
   disabled,
-  variant = "solid",
-  safeMode,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  variant?: "solid" | "ghost";
-  safeMode: boolean;
 }) {
-  const base: React.CSSProperties = {
-    borderRadius: 18,
-    padding: "12px 14px",
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.45 : 1,
-    fontWeight: 800,
-    letterSpacing: 0.2,
-    whiteSpace: "nowrap",
-    WebkitTapHighlightColor: "transparent",
-    appearance: "none",
-    WebkitAppearance: "none",
-    backdropFilter: "none",
-    WebkitBackdropFilter: "none",
-  };
-
-  if (variant === "solid") {
-    return (
-      <button
-        type="button"
-        style={{
-          ...base,
-          color: "rgba(10,12,16,0.95)",
-          backgroundColor: "rgba(255,255,255,0.92)",
-          border: "1px solid rgba(255,255,255,0.14)",
-          boxShadow: "0 10px 26px rgba(0,0,0,0.25)",
-        }}
-        onClick={disabled ? undefined : onClick}
-      >
-        {children}
-      </button>
-    );
-  }
-
   return (
     <button
       type="button"
-      style={{
-        ...base,
-        color: "rgba(255,255,255,0.95)",
-        backgroundColor: safeMode ? SAFE.ghostBtnBg : "rgba(255,255,255,0.12)",
-        border: `1px solid ${safeMode ? SAFE.border : "rgba(255,255,255,0.22)"}`,
-        boxShadow: "0 6px 16px rgba(0,0,0,0.18)",
-      }}
       onClick={disabled ? undefined : onClick}
+      style={{
+        borderRadius: 18,
+        padding: "12px 14px",
+        backgroundColor: disabled
+          ? "rgba(60,70,90,0.6)"
+          : "rgba(42,50,70,0.98)",
+        border: "1px solid rgba(255,255,255,0.22)",
+        color: "rgba(255,255,255,0.95)",
+        cursor: disabled ? "not-allowed" : "pointer",
+        fontWeight: 700,
+        letterSpacing: 0.2,
+        boxShadow: "0 6px 16px rgba(0,0,0,0.25)",
+        WebkitTapHighlightColor: "transparent",
+        appearance: "none",
+        WebkitAppearance: "none",
+        opacity: disabled ? 0.55 : 1,
+
+        // ❌ никаких стеклянных эффектов
+        backdropFilter: "none",
+        WebkitBackdropFilter: "none",
+      }}
     >
       {children}
     </button>
@@ -602,29 +594,11 @@ function AnswerButton({
   children,
   onClick,
   active,
-  safeMode,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   active: boolean;
-  safeMode: boolean;
 }) {
-  const bg = safeMode
-    ? active
-      ? SAFE.answerBgActive
-      : SAFE.answerBg
-    : active
-    ? "rgba(255,255,255,0.22)"
-    : "rgba(255,255,255,0.12)";
-
-  const border = safeMode
-    ? active
-      ? "rgba(255,255,255,0.40)"
-      : "rgba(255,255,255,0.18)"
-    : active
-    ? "rgba(255,255,255,0.55)"
-    : "rgba(255,255,255,0.22)";
-
   return (
     <button
       type="button"
@@ -632,15 +606,23 @@ function AnswerButton({
       style={{
         borderRadius: 18,
         padding: 12,
-        backgroundColor: bg,
-        border: `1px solid ${border}`,
+        backgroundColor: active
+          ? "rgba(64,76,104,0.98)"
+          : "rgba(42,50,70,0.98)",
+        border: active
+          ? "1px solid rgba(255,255,255,0.40)"
+          : "1px solid rgba(255,255,255,0.22)",
         color: "rgba(255,255,255,0.95)",
         cursor: "pointer",
         textAlign: "center",
-        boxShadow: active ? "0 10px 24px rgba(0,0,0,0.28)" : "0 6px 16px rgba(0,0,0,0.18)",
+        boxShadow: active
+          ? "0 10px 24px rgba(0,0,0,0.28)"
+          : "0 6px 16px rgba(0,0,0,0.18)",
         WebkitTapHighlightColor: "transparent",
         appearance: "none",
         WebkitAppearance: "none",
+
+        // ❌ никаких стеклянных эффектов
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
       }}
@@ -653,11 +635,9 @@ function AnswerButton({
 function GlassDisclosure({
   title,
   body,
-  safeMode,
 }: {
   title: string;
   body: React.ReactNode;
-  safeMode: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -665,11 +645,14 @@ function GlassDisclosure({
     <div
       style={{
         borderRadius: 16,
-        backgroundColor: safeMode ? SAFE.disclosureBg : "rgba(0,0,0,0.18)",
-        border: `1px solid ${SAFE.border}`,
-        backdropFilter: safeMode ? "none" : "blur(10px)",
-        WebkitBackdropFilter: safeMode ? "none" : "blur(10px)",
+        backgroundColor: "rgba(42,50,70,0.98)",
+        border: "1px solid rgba(255,255,255,0.18)",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
         overflow: "hidden",
+
+        // ❌ никаких стеклянных эффектов
+        backdropFilter: "none",
+        WebkitBackdropFilter: "none",
       }}
     >
       <button
@@ -685,9 +668,9 @@ function GlassDisclosure({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 10,
-          color: "rgba(255,255,255,0.92)",
-          fontWeight: 900,
-          backgroundColor: "transparent",
+          color: "rgba(255,255,255,0.95)",
+          fontWeight: 800,
+          background: "transparent",
           border: "none",
           WebkitTapHighlightColor: "transparent",
           appearance: "none",
@@ -697,7 +680,7 @@ function GlassDisclosure({
         <span>{title}</span>
         <span
           style={{
-            opacity: 0.7,
+            opacity: 0.85,
             fontWeight: 900,
             transform: open ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 180ms ease",
@@ -707,12 +690,18 @@ function GlassDisclosure({
         </span>
       </button>
 
-      {open && <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.92)" }}>{body}</div>}
+      {open && (
+        <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.92)" }}>
+          {body}
+        </div>
+      )}
     </div>
   );
 }
 
-function Header({ progress, safeMode }: { progress?: number; safeMode: boolean }) {
+/* ===================== Existing logic components ===================== */
+
+function Header({ progress }: { progress?: number }) {
   if (typeof progress !== "number") return null;
 
   return (
@@ -724,9 +713,11 @@ function Header({ progress, safeMode }: { progress?: number; safeMode: boolean }
           borderRadius: 999,
           backgroundColor: "rgba(255,255,255,0.10)",
           border: "1px solid rgba(255,255,255,0.10)",
-          backdropFilter: safeMode ? "none" : "blur(12px)",
-          WebkitBackdropFilter: safeMode ? "none" : "blur(12px)",
           overflow: "hidden",
+
+          // ❌ никаких стеклянных эффектов
+          backdropFilter: "none",
+          WebkitBackdropFilter: "none",
         }}
       >
         <div
@@ -742,17 +733,23 @@ function Header({ progress, safeMode }: { progress?: number; safeMode: boolean }
   );
 }
 
-function ScoreRow({ color, value, safeMode }: { color: Color; value: number; safeMode: boolean }) {
+function ScoreRow({ color, value }: { color: Color; value: number }) {
   const max = 30;
   const pct = Math.round((value / max) * 100);
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <div style={{ fontWeight: 900, color: "rgba(255,255,255,0.92)" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
+        <div style={{ fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
           {colorEmoji(color)} {colorLabel(color)}
         </div>
-        <div style={{ opacity: 0.75, color: "rgba(255,255,255,0.85)" }}>
+        <div style={{ opacity: 0.8, color: "rgba(255,255,255,0.88)" }}>
           {value} / {max}
         </div>
       </div>
@@ -762,7 +759,7 @@ function ScoreRow({ color, value, safeMode }: { color: Color; value: number; saf
           marginTop: 6,
           height: 10,
           borderRadius: 999,
-          backgroundColor: safeMode ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.10)",
+          backgroundColor: "rgba(255,255,255,0.12)",
           border: "1px solid rgba(255,255,255,0.10)",
           overflow: "hidden",
         }}
@@ -789,9 +786,9 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
 
   return (
     <div>
-      <div style={{ fontSize: 16, fontWeight: 900, color: "rgba(255,255,255,0.92)" }}>
-        Твой профиль: {colorEmoji(top1.color)} {colorLabel(top1.color)} + {colorEmoji(top2.color)}{" "}
-        {colorLabel(top2.color)}
+      <div style={{ fontSize: 16, fontWeight: 900, color: "rgba(255,255,255,0.95)" }}>
+        Твой профиль: {colorEmoji(top1.color)} {colorLabel(top1.color)} +{" "}
+        {colorEmoji(top2.color)} {colorLabel(top2.color)}
       </div>
 
       <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
@@ -803,8 +800,14 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
           title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`}
           items={t2.strengths}
         />
-        <TipBlock title="Триггеры" items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
-        <TipBlock title="Как с тобой общаться" items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
+        <TipBlock
+          title="Триггеры"
+          items={[...t1.triggers, ...t2.triggers].slice(0, 3)}
+        />
+        <TipBlock
+          title="Как с тобой общаться"
+          items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)}
+        />
       </div>
     </div>
   );
@@ -813,10 +816,17 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
 function TipBlock({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
-      <div style={{ fontSize: 13, opacity: 0.85, fontWeight: 900, color: "rgba(255,255,255,0.92)" }}>
+      <div style={{ fontSize: 13, opacity: 0.9, fontWeight: 800, color: "rgba(255,255,255,0.95)" }}>
         {title}
       </div>
-      <ul style={{ margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, color: "rgba(255,255,255,0.92)" }}>
+      <ul
+        style={{
+          margin: "6px 0 0 18px",
+          padding: 0,
+          lineHeight: 1.35,
+          color: "rgba(255,255,255,0.92)",
+        }}
+      >
         {items.map((x) => (
           <li key={x} style={{ marginTop: 4 }}>
             {x}
