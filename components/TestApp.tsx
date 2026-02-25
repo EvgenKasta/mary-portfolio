@@ -190,10 +190,25 @@ ${list(howToTalk)}
     const tg = getTgWebApp();
 
     const initData = tg?.initData || "";
-    const user = tg?.initDataUnsafe?.user;
+
+    // ✅ достаём user максимально надёжно:
+    // 1) пробуем tg.initDataUnsafe.user
+    // 2) если пусто — парсим из initData параметр user
+    let user: any = (tg as any)?.initDataUnsafe?.user || null;
+
+    if (!user && initData) {
+      try {
+        const p = new URLSearchParams(initData);
+        const userRaw = p.get("user");
+        if (userRaw) user = JSON.parse(userRaw);
+      } catch {
+        // ignore
+      }
+    }
 
     const username = user?.username ? `@${user.username}` : "без username";
-    const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "не указано";
+    const fullName =
+      [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "не указано";
     const userId = user?.id ? String(user.id) : "unknown";
 
     const userBlock =
@@ -206,10 +221,7 @@ ${list(howToTalk)}
 
     const secret = (process.env.NEXT_PUBLIC_NOTIFY_SECRET || "").trim();
 
-    // ✅ ВАЖНО: секрет шлём ВСЕГДА (чтобы отчёт не отваливался, если initData пустой)
     const body: any = { text: messageText, secret };
-
-    // ✅ А initData добавляем, если он есть (для твоей “верификации по Telegram”)
     if (initData) body.initData = initData;
 
     const res = await fetch("/api/notify-owner", {
