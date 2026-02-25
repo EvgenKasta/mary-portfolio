@@ -3,6 +3,9 @@ export type TelegramWebApp = {
   expand: () => void;
   close: () => void;
 
+  // 🆕 добавили метод для отправки данных в бот
+  sendData?: (data: string) => void;
+
   // Telegram добавляет методы не везде, поэтому держим опциональными
   requestFullscreen?: () => void;
   disableVerticalSwipes?: () => void;
@@ -40,10 +43,10 @@ export function tgSafeInit() {
     // ✅ максимально раскрыть WebApp
     tg.expand();
 
-    // ✅ если доступно — просим фуллскрин (не на всех клиентах Telegram)
+    // ✅ если доступно — просим фуллскрин
     tg.requestFullscreen?.();
 
-    // ✅ iOS: помогает убрать лишние жесты
+    // ✅ iOS фикс жестов
     tg.disableVerticalSwipes?.();
   } catch {
     // ignore
