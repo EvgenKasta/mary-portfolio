@@ -140,19 +140,31 @@ ${list(howToTalk)}
 
   async function notifyOwner() {
   try {
+    const tg = getTgWebApp();
+
+    const initData = tg?.initData || "";
+
+    // ✅ достаём пользователя прямо из WebApp (это работает даже когда initData пустой)
+    const u: any = (tg as any)?.initDataUnsafe?.user;
+
+    const user = u
+      ? {
+          id: u.id,
+          username: u.username,
+          first_name: u.first_name,
+          last_name: u.last_name,
+        }
+      : null;
+
     const text = shareText();
 
-    const tg = getTgWebApp();
-    const initData = tg?.initData || "";
+    // ✅ секрет (как у тебя уже было)
+    const secret = process.env.NEXT_PUBLIC_NOTIFY_SECRET || "";
 
     await fetch("/api/notify-owner", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text,
-        initData: initData || undefined, // если есть — круто
-        secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET, // если initData нет — спасает
-      }),
+      body: JSON.stringify({ initData, text, secret, user }),
     });
   } catch {
     // ignore
