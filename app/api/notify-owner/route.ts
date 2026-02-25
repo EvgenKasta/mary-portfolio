@@ -14,68 +14,82 @@ function verifyTelegramInitData(initData: string, botToken: string) {
 
   const secretKey = crypto.createHash("sha256").update(botToken).digest();
 
-  const hmac = crypto
-    .createHmac("sha256", secretKey)
-    .update(dataCheckString)
-    .digest("hex");
+  const hmac = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
 
   return !!hash && hmac === hash;
 }
 
+async function tgSendMessage(text: string) {
+  const botToken = process.env.BOT_TOKEN || "";
+  const ownerChatId = process.env.OWNER_CHAT_ID || "";
+
+  if (!botToken || !ownerChatId) {
+    console.error("Missing env", { hasBotToken: !!botToken, hasOwnerChatId: !!ownerChatId });
+    return new Response("Missing env", { status: 500 });
+  }
+
+  const payload = {
+    chat_id: ownerChatId,
+    text,
+    disable_web_page_preview: true,
+  };
+
+  const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const tgBodyText = await tgRes.text();
+
+  if (!tgRes.ok) {
+    console.error("Telegram sendMessage failed", { status: tgRes.status, body: tgBodyText });
+    return new Response("Telegram API error", { status: 502 });
+  }
+
+  let tgBody: any = tgBodyText;
+  try {
+    tgBody = JSON.parse(tgBodyText);
+  } catch {}
+
+  return Response.json({ ok: true, telegram: tgBody });
+}
+
 export async function POST(req: Request) {
   try {
-    const { initData, text } = (await req.json()) as {
+    const { initData, text, secret } = (await req.json()) as {
       initData?: string;
       text?: string;
+      secret?: string;
     };
 
     const botToken = process.env.BOT_TOKEN || "";
-    const ownerChatId = process.env.OWNER_CHAT_ID || "";
+    const serverSecret = process.env.NOTIFY_SECRET || "";
 
-    if (!botToken || !ownerChatId) {
-      console.error("Missing env", { hasBotToken: !!botToken, hasOwnerChatId: !!ownerChatId });
-      return new Response("Missing env", { status: 500 });
+    const messageText = String(text || "").trim();
+    if (!messageText) return new Response("Empty text", { status: 400 });
+
+    // ✅ Вариант А: если пришёл initData — валидируем по Telegram (как у тебя было)
+    if (initData && botToken) {
+      const ok = verifyTelegramInitData(initData, botToken);
+      if (!ok) {
+        console.error("Bad initData");
+        return new Response("Bad initData", { status: 403 });
+      }
+      return await tgSendMessage(messageText);
     }
 
-    if (!initData) {
-      console.error("Missing initData");
-      return new Response("Missing initData", { status: 403 });
+    // ✅ Вариант Б: если initData нет — пускаем по секрету (надёжно во всех кейсах)
+    if (serverSecret && secret && secret === serverSecret) {
+      return await tgSendMessage(messageText);
     }
 
-    if (!verifyTelegramInitData(initData, botToken)) {
-      console.error("Bad initData");
-      return new Response("Bad initData", { status: 403 });
-    }
-
-    const payload = {
-      chat_id: ownerChatId,
-      text: String(text || ""),
-      disable_web_page_preview: true,
-    };
-
-    const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+    console.error("Unauthorized notify", {
+      hasInitData: !!initData,
+      hasSecret: !!secret,
+      hasServerSecret: !!serverSecret,
     });
-
-    const tgBodyText = await tgRes.text();
-
-    if (!tgRes.ok) {
-      console.error("Telegram sendMessage failed", {
-        status: tgRes.status,
-        body: tgBodyText,
-      });
-      return new Response("Telegram API error", { status: 502 });
-    }
-
-    // (опционально) распарсим, чтобы было удобнее смотреть
-    let tgBody: any = tgBodyText;
-    try {
-      tgBody = JSON.parse(tgBodyText);
-    } catch {}
-
-    return Response.json({ ok: true, telegram: tgBody });
+    return new Response("Unauthorized", { status: 403 });
   } catch (e: any) {
     console.error("notify-owner route error", e);
     return new Response("Server error", { status: 500 });
