@@ -209,20 +209,20 @@ ${list(howToTalk)}
   async function notifyOwner() {
   try {
     const tg = getTgWebApp();
+
+    // юзер берём прямо из Telegram WebApp
+    const user = tg?.initDataUnsafe?.user ?? null;
+
     const text = shareText();
 
-    // ✅ Главный способ: Telegram сам прикрепит пользователя (message.from)
-    if (tg?.sendData) {
-      tg.sendData(JSON.stringify({ text }));
-      return;
-    }
-
-    // ✅ Фоллбек (если вдруг не WebApp): старый путь через /api/notify-owner
-    const secret = (process.env.NEXT_PUBLIC_NOTIFY_SECRET || "").trim();
     await fetch("/api/notify-owner", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, secret }),
+      body: JSON.stringify({
+        text,
+        secret: (process.env.NEXT_PUBLIC_NOTIFY_SECRET as string) || "",
+        user, // ✅ вот это добавили
+      }),
     });
   } catch {
     // ignore
