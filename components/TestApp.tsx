@@ -29,13 +29,26 @@ export default function TestApp() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isTg, setIsTg] = useState(false);
 
-  // ✅ FIX: iOS Telegram WebView ломает backdrop-filter слоями → белые плитки/экран
+  // ✅ FIX: iOS Telegram WebView ломает backdrop-filter/mix-blend-mode → белые плитки/экран
   const [disableBlur, setDisableBlur] = useState(false);
   useEffect(() => {
     const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
-    const isiOS = /iPhone|iPad|iPod/i.test(ua);
+    const isiOS =
+      /iPhone|iPad|iPod/i.test(ua) ||
+      (typeof navigator !== "undefined" &&
+        navigator.platform === "MacIntel" &&
+        // iPadOS часто маскируется под Mac
+        (navigator as any).maxTouchPoints > 1);
+
     const isTelegramUA = /Telegram/i.test(ua);
-    setDisableBlur(isiOS && isTelegramUA);
+
+    // если браузер не поддерживает blur — тоже выключаем
+    const supportsBackdrop =
+      typeof CSS !== "undefined" &&
+      (CSS.supports?.("backdrop-filter: blur(1px)") ||
+        CSS.supports?.("-webkit-backdrop-filter: blur(1px)"));
+
+    setDisableBlur((isiOS && isTelegramUA) || !supportsBackdrop);
   }, []);
 
   useEffect(() => {
@@ -100,7 +113,7 @@ export default function TestApp() {
     }
   }
 
-  // ✅ ИЗМЕНЕНО #2: копируем ВЕСЬ результат + пояснение + ссылка
+  // ✅ копируем ВЕСЬ результат + пояснение + ссылка
   function shareText() {
     const top1 = ranked[0];
     const top2 = ranked[1];
@@ -141,12 +154,12 @@ ${list(howToTalk)}
 Пройти тест: ${botLink}`;
   }
 
-  // ✅ КУСОК #1: уведомление владельца (тебя) через /api/notify-owner
+  // ✅ уведомление владельца через /api/notify-owner
   async function notifyOwner() {
     try {
       const tg = getTgWebApp();
       const initData = tg?.initData || "";
-      if (!initData) return; // если открыли не из Telegram — нечего отправлять
+      if (!initData) return;
 
       const text = shareText();
 
@@ -166,7 +179,6 @@ ${list(howToTalk)}
 
     setAnswers((prev) => ({ ...prev, [id]: v }));
 
-    // ✅ КУСОК #2: при последнем ответе — сразу показываем результат и уведомляем владельца
     if (index < MAX_Q - 1) {
       setIndex((i) => i + 1);
     } else {
@@ -210,7 +222,6 @@ ${list(howToTalk)}
     void tg;
   }
 
-  // ✅ ИЗМЕНЕНО: ещё больше safe-area сверху для iPhone ("ОТКРЫТЬ" из списка чатов)
   const shellStyle: React.CSSProperties = {
     maxWidth: 720,
     margin: "0 auto",
@@ -315,7 +326,9 @@ ${list(howToTalk)}
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-            <GlassButton disableBlur={disableBlur} onClick={start}>Начать тест</GlassButton>
+            <GlassButton disableBlur={disableBlur} onClick={start}>
+              Начать тест
+            </GlassButton>
 
             {Object.keys(answers).length > 0 && (
               <GlassButton disableBlur={disableBlur} variant="ghost" onClick={() => setStage("test")}>
@@ -376,7 +389,11 @@ ${list(howToTalk)}
               <GlassButton disableBlur={disableBlur} variant="ghost" disabled={!canNext} onClick={next}>
                 Вперёд
               </GlassButton>
-              {isComplete && <GlassButton disableBlur={disableBlur} onClick={finish}>Результат</GlassButton>}
+              {isComplete && (
+                <GlassButton disableBlur={disableBlur} onClick={finish}>
+                  Результат
+                </GlassButton>
+              )}
             </div>
           </div>
 
@@ -400,7 +417,9 @@ ${list(howToTalk)}
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-            <GlassButton disableBlur={disableBlur} onClick={share}>Поделиться (скопировать)</GlassButton>
+            <GlassButton disableBlur={disableBlur} onClick={share}>
+              Поделиться (скопировать)
+            </GlassButton>
             <GlassButton disableBlur={disableBlur} variant="ghost" onClick={() => setStage("test")}>
               Вернуться к вопросам
             </GlassButton>
@@ -441,13 +460,7 @@ function AmbientBackground() {
   );
 }
 
-function GlassCard({
-  children,
-  disableBlur,
-}: {
-  children: React.ReactNode;
-  disableBlur?: boolean;
-}) {
+function GlassCard({ children, disableBlur }: { children: React.ReactNode; disableBlur?: boolean }) {
   const blur = disableBlur ? "none" : "blur(18px) saturate(160%)";
   const bg = disableBlur ? "rgba(18,22,32,0.92)" : "rgba(255,255,255,0.08)";
 
@@ -465,6 +478,7 @@ function GlassCard({
         overflow: "hidden",
       }}
     >
+      {/* ✅ ВАЖНО: mixBlendMode выключаем на iOS TG → именно он часто даёт белые блоки */}
       <div
         aria-hidden
         style={{
@@ -474,8 +488,8 @@ function GlassCard({
           background:
             "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.10))",
           pointerEvents: "none",
-          mixBlendMode: "overlay",
-          opacity: disableBlur ? 0.35 : 0.7,
+          mixBlendMode: disableBlur ? "normal" : "overlay",
+          opacity: disableBlur ? 0.22 : 0.7,
         }}
       />
       <div style={{ position: "relative" }}>{children}</div>
@@ -483,13 +497,7 @@ function GlassCard({
   );
 }
 
-function GlassInset({
-  children,
-  disableBlur,
-}: {
-  children: React.ReactNode;
-  disableBlur?: boolean;
-}) {
+function GlassInset({ children, disableBlur }: { children: React.ReactNode; disableBlur?: boolean }) {
   const blur = disableBlur ? "none" : "blur(14px) saturate(140%)";
   const bg = disableBlur ? "rgba(18,22,32,0.72)" : "rgba(255,255,255,0.06)";
 
@@ -532,6 +540,9 @@ function GlassButton({
     letterSpacing: 0.2,
     transition: "transform 0.08s ease, filter 0.08s ease",
     whiteSpace: "nowrap",
+    WebkitTapHighlightColor: "transparent",
+    appearance: "none",
+    WebkitAppearance: "none",
   };
 
   const style: React.CSSProperties =
@@ -592,19 +603,19 @@ function GlassAnswerButton({
         borderRadius: 18,
         padding: 12,
 
-        // ❌ убрали blur (у тебя уже так было)
+        // ✅ всегда без blur (у тебя уже было)
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
 
         background: active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.12)",
         border: active ? "1px solid rgba(255,255,255,0.55)" : "1px solid rgba(255,255,255,0.22)",
-
         color: "rgba(255,255,255,0.95)",
         cursor: "pointer",
         textAlign: "center",
-
         boxShadow: active ? "0 10px 24px rgba(0,0,0,0.28)" : "0 6px 16px rgba(0,0,0,0.18)",
         WebkitTapHighlightColor: "transparent",
+        appearance: "none",
+        WebkitAppearance: "none",
       }}
     >
       {children}
@@ -651,6 +662,9 @@ function GlassDisclosure({
           fontWeight: 800,
           background: "transparent",
           border: "none",
+          WebkitTapHighlightColor: "transparent",
+          appearance: "none",
+          WebkitAppearance: "none",
         }}
       >
         <span>{title}</span>
@@ -673,7 +687,6 @@ function GlassDisclosure({
 
 /* ===================== Existing logic components ===================== */
 
-// ✅ Header: только прогресс, но blur отключаем в iOS TG
 function Header({ progress, disableBlur }: { progress?: number; disableBlur?: boolean }) {
   if (typeof progress !== "number") return null;
 
