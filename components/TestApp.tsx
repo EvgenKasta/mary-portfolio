@@ -142,12 +142,16 @@ ${list(howToTalk)}
   try {
     const text = shareText();
 
+    const tg = getTgWebApp();
+    const initData = tg?.initData || "";
+
     await fetch("/api/notify-owner", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text,
-        secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET,
+        initData: initData || undefined, // если есть — круто
+        secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET, // если initData нет — спасает
       }),
     });
   } catch {
