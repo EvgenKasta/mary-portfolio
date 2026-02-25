@@ -139,22 +139,21 @@ ${list(howToTalk)}
   }
 
   async function notifyOwner() {
-    try {
-      const tg = getTgWebApp();
-      const initData = tg?.initData || "";
-      if (!initData) return;
+  try {
+    const text = shareText();
 
-      const text = shareText();
-
-      await fetch("/api/notify-owner", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData, text }),
-      });
-    } catch {
-      // ignore
-    }
+    await fetch("/api/notify-owner", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET,
+      }),
+    });
+  } catch {
+    // ignore
   }
+}
 
   function setAnswer(value: number) {
     const v = clampScore(value);
