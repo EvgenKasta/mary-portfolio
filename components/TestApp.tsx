@@ -51,6 +51,19 @@ export default function TestApp() {
     setDisableBlur((isiOS && isTelegramUA) || !supportsBackdrop);
   }, []);
 
+  // ✅ FIX: на части iPhone TG WebView фон с zIndex:-1 не рисуется → всё становится белым
+  useEffect(() => {
+    const bg = "#0B0F16";
+    try {
+      document.documentElement.style.backgroundColor = bg;
+      document.documentElement.style.colorScheme = "dark";
+      document.body.style.backgroundColor = bg;
+      document.body.style.color = "rgba(255,255,255,0.92)";
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => {
     const { isTg } = tgSafeInit();
     setIsTg(isTg);
@@ -74,7 +87,10 @@ export default function TestApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers, index, stage }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ answers, index, stage })
+      );
     } catch {
       // ignore
     }
@@ -87,7 +103,10 @@ export default function TestApp() {
     return Math.round((answeredCount / MAX_Q) * 100);
   }, [answers]);
 
-  const isComplete = useMemo(() => Object.keys(answers).length >= MAX_Q, [answers]);
+  const isComplete = useMemo(
+    () => Object.keys(answers).length >= MAX_Q,
+    [answers]
+  );
 
   const canPrev = stage === "test" && index > 0;
   const canNext = stage === "test" && index < MAX_Q - 1;
@@ -229,215 +248,317 @@ ${list(howToTalk)}
     paddingRight: 16,
     paddingBottom: 22,
     paddingTop: "max(calc(env(safe-area-inset-top) + 44px), 84px)",
+    minHeight: "100vh",
+    background: "#0B0F16", // ✅ подстраховка: если фон-слой не отрисовался
+    position: "relative",
+    zIndex: 1, // ✅ контент поверх фона
+    colorScheme: "dark",
   };
 
   return (
-    <div style={shellStyle}>
+    <>
       <AmbientBackground />
 
-      <Header disableBlur={disableBlur} progress={stage === "test" ? progress : undefined} />
+      <div style={shellStyle}>
+        <Header
+          disableBlur={disableBlur}
+          progress={stage === "test" ? progress : undefined}
+        />
 
-      {stage === "start" && (
-        <GlassCard disableBlur={disableBlur}>
-          <h1 style={{ marginTop: 0, marginBottom: 10, fontSize: 22, letterSpacing: 0.2 }}>
-            Тест по психотипам (4 цвета)
-          </h1>
+        {stage === "start" && (
+          <GlassCard disableBlur={disableBlur}>
+            <h1
+              style={{
+                marginTop: 0,
+                marginBottom: 10,
+                fontSize: 22,
+                letterSpacing: 0.2,
+              }}
+            >
+              Тест по психотипам (4 цвета)
+            </h1>
 
-          <p style={{ marginTop: 0, opacity: 0.88, lineHeight: 1.45 }}>
-            Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение: 0 (не про меня) … 3 (точно про меня).
-          </p>
+            <p style={{ marginTop: 0, opacity: 0.88, lineHeight: 1.45 }}>
+              Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение:
+              0 (не про меня) … 3 (точно про меня).
+            </p>
 
-          <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
-            <GlassDisclosure
-              disableBlur={disableBlur}
-              title="🔴 Красный — результат, скорость, лидерство"
-              body={
-                <>
-                  <p style={p0}>Кто это: лидер, драйвер, человек действия.</p>
-                  <div style={h}>Сильные стороны:</div>
-                  <ul style={ul}>
-                    <li style={li}>быстро принимает решения</li>
-                    <li style={li}>не боится ответственности</li>
-                    <li style={li}>нацелен на результат</li>
-                    <li style={li}>умеет давить и ускорять</li>
-                  </ul>
-                  <p style={p1}><b>Мотивация:</b> победа, влияние, достижение целей.</p>
-                  <p style={p1}><b>Триггеры:</b> медлительность, слабость, неопределённость.</p>
-                </>
-              }
-            />
+            <div
+              style={{
+                marginTop: 14,
+                display: "grid",
+                gap: 10,
+                fontSize: 14,
+              }}
+            >
+              <GlassDisclosure
+                disableBlur={disableBlur}
+                title="🔴 Красный — результат, скорость, лидерство"
+                body={
+                  <>
+                    <p style={p0}>Кто это: лидер, драйвер, человек действия.</p>
+                    <div style={h}>Сильные стороны:</div>
+                    <ul style={ul}>
+                      <li style={li}>быстро принимает решения</li>
+                      <li style={li}>не боится ответственности</li>
+                      <li style={li}>нацелен на результат</li>
+                      <li style={li}>умеет давить и ускорять</li>
+                    </ul>
+                    <p style={p1}>
+                      <b>Мотивация:</b> победа, влияние, достижение целей.
+                    </p>
+                    <p style={p1}>
+                      <b>Триггеры:</b> медлительность, слабость, неопределённость.
+                    </p>
+                  </>
+                }
+              />
 
-            <GlassDisclosure
-              disableBlur={disableBlur}
-              title="🟡 Жёлтый — энергия, идеи, общение"
-              body={
-                <>
-                  <p style={p0}>Кто это: вдохновитель, генератор идей, коммуникатор.</p>
-                  <div style={h}>Сильные стороны:</div>
-                  <ul style={ul}>
-                    <li style={li}>харизма</li>
-                    <li style={li}>лёгкость в общении</li>
-                    <li style={li}>креатив</li>
-                    <li style={li}>умеет зажигать людей</li>
-                  </ul>
-                  <p style={p1}><b>Мотивация:</b> признание, свобода, эмоции.</p>
-                  <p style={p1}><b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.</p>
-                </>
-              }
-            />
+              <GlassDisclosure
+                disableBlur={disableBlur}
+                title="🟡 Жёлтый — энергия, идеи, общение"
+                body={
+                  <>
+                    <p style={p0}>
+                      Кто это: вдохновитель, генератор идей, коммуникатор.
+                    </p>
+                    <div style={h}>Сильные стороны:</div>
+                    <ul style={ul}>
+                      <li style={li}>харизма</li>
+                      <li style={li}>лёгкость в общении</li>
+                      <li style={li}>креатив</li>
+                      <li style={li}>умеет зажигать людей</li>
+                    </ul>
+                    <p style={p1}>
+                      <b>Мотивация:</b> признание, свобода, эмоции.
+                    </p>
+                    <p style={p1}>
+                      <b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.
+                    </p>
+                  </>
+                }
+              />
 
-            <GlassDisclosure
-              disableBlur={disableBlur}
-              title="🟢 Зелёный — стабильность, поддержка, команда"
-              body={
-                <>
-                  <p style={p0}>Кто это: командный игрок, дипломат, опора.</p>
-                  <div style={h}>Сильные стороны:</div>
-                  <ul style={ul}>
-                    <li style={li}>терпение</li>
-                    <li style={li}>надёжность</li>
-                    <li style={li}>эмпатия</li>
-                    <li style={li}>умеет слушать</li>
-                  </ul>
-                  <p style={p1}><b>Мотивация:</b> гармония, безопасность, стабильность.</p>
-                  <p style={p1}><b>Триггеры:</b> конфликты, давление, резкие изменения.</p>
-                </>
-              }
-            />
+              <GlassDisclosure
+                disableBlur={disableBlur}
+                title="🟢 Зелёный — стабильность, поддержка, команда"
+                body={
+                  <>
+                    <p style={p0}>Кто это: командный игрок, дипломат, опора.</p>
+                    <div style={h}>Сильные стороны:</div>
+                    <ul style={ul}>
+                      <li style={li}>терпение</li>
+                      <li style={li}>надёжность</li>
+                      <li style={li}>эмпатия</li>
+                      <li style={li}>умеет слушать</li>
+                    </ul>
+                    <p style={p1}>
+                      <b>Мотивация:</b> гармония, безопасность, стабильность.
+                    </p>
+                    <p style={p1}>
+                      <b>Триггеры:</b> конфликты, давление, резкие изменения.
+                    </p>
+                  </>
+                }
+              />
 
-            <GlassDisclosure
-              disableBlur={disableBlur}
-              title="🔵 Синий — логика, анализ, системность"
-              body={
-                <>
-                  <p style={p0}>Кто это: аналитик, стратег, системный мыслитель.</p>
-                  <div style={h}>Сильные стороны:</div>
-                  <ul style={ul}>
-                    <li style={li}>внимание к деталям</li>
-                    <li style={li}>логика</li>
-                    <li style={li}>структурность</li>
-                    <li style={li}>высокий стандарт качества</li>
-                  </ul>
-                  <p style={p1}><b>Мотивация:</b> точность, факты, компетентность.</p>
-                  <p style={p1}><b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.</p>
-                </>
-              }
-            />
-          </div>
-
-          <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-            <GlassButton disableBlur={disableBlur} onClick={start}>
-              Начать тест
-            </GlassButton>
-
-            {Object.keys(answers).length > 0 && (
-              <GlassButton disableBlur={disableBlur} variant="ghost" onClick={() => setStage("test")}>
-                Продолжить
-              </GlassButton>
-            )}
-          </div>
-
-          <div style={{ marginTop: 12, opacity: 0.65, fontSize: 12 }}>
-            * Упрощённая модель (DISC-подобная). Результат — подсказка, не диагноз.
-          </div>
-        </GlassCard>
-      )}
-
-      {stage === "test" && (
-        <GlassCard disableBlur={disableBlur}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-            <div style={{ fontSize: 13, opacity: 0.75 }}>
-              Вопрос {index + 1} / {MAX_Q}
+              <GlassDisclosure
+                disableBlur={disableBlur}
+                title="🔵 Синий — логика, анализ, системность"
+                body={
+                  <>
+                    <p style={p0}>
+                      Кто это: аналитик, стратег, системный мыслитель.
+                    </p>
+                    <div style={h}>Сильные стороны:</div>
+                    <ul style={ul}>
+                      <li style={li}>внимание к деталям</li>
+                      <li style={li}>логика</li>
+                      <li style={li}>структурность</li>
+                      <li style={li}>высокий стандарт качества</li>
+                    </ul>
+                    <p style={p1}>
+                      <b>Мотивация:</b> точность, факты, компетентность.
+                    </p>
+                    <p style={p1}>
+                      <b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.
+                    </p>
+                  </>
+                }
+              />
             </div>
-            <div style={{ fontSize: 12, opacity: 0.6 }}>
-              Ответов: {Object.keys(answers).length}
-            </div>
-          </div>
 
-          <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>{q.text}</div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 16 }}>
-            <GlassAnswerButton active={selected === 0} onClick={() => setAnswer(0)}>
-              0
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>не про меня</span>
-            </GlassAnswerButton>
-            <GlassAnswerButton active={selected === 1} onClick={() => setAnswer(1)}>
-              1
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>иногда</span>
-            </GlassAnswerButton>
-            <GlassAnswerButton active={selected === 2} onClick={() => setAnswer(2)}>
-              2
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>часто</span>
-            </GlassAnswerButton>
-            <GlassAnswerButton active={selected === 3} onClick={() => setAnswer(3)}>
-              3
-              <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>это я</span>
-            </GlassAnswerButton>
-          </div>
-
-          <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-            <GlassButton disableBlur={disableBlur} variant="ghost" onClick={reset}>
-              Начать сначала
-            </GlassButton>
-
-            <div style={{ flex: 1 }} />
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <GlassButton disableBlur={disableBlur} variant="ghost" disabled={!canPrev} onClick={prev}>
-                Назад
+            <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
+              <GlassButton disableBlur={disableBlur} onClick={start}>
+                Начать тест
               </GlassButton>
-              <GlassButton disableBlur={disableBlur} variant="ghost" disabled={!canNext} onClick={next}>
-                Вперёд
-              </GlassButton>
-              {isComplete && (
-                <GlassButton disableBlur={disableBlur} onClick={finish}>
-                  Результат
+
+              {Object.keys(answers).length > 0 && (
+                <GlassButton
+                  disableBlur={disableBlur}
+                  variant="ghost"
+                  onClick={() => setStage("test")}
+                >
+                  Продолжить
                 </GlassButton>
               )}
             </div>
-          </div>
 
-          <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>Совет: отвечай быстро, как чувствуешь.</div>
-        </GlassCard>
-      )}
+            <div style={{ marginTop: 12, opacity: 0.65, fontSize: 12 }}>
+              * Упрощённая модель (DISC-подобная). Результат — подсказка, не диагноз.
+            </div>
+          </GlassCard>
+        )}
 
-      {stage === "result" && (
-        <GlassCard disableBlur={disableBlur}>
-          <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>Результат</h2>
+        {stage === "test" && (
+          <GlassCard disableBlur={disableBlur}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                gap: 12,
+              }}
+            >
+              <div style={{ fontSize: 13, opacity: 0.75 }}>
+                Вопрос {index + 1} / {MAX_Q}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.6 }}>
+                Ответов: {Object.keys(answers).length}
+              </div>
+            </div>
 
-          <ScoreRow color="red" value={scores.red} />
-          <ScoreRow color="yellow" value={scores.yellow} />
-          <ScoreRow color="green" value={scores.green} />
-          <ScoreRow color="blue" value={scores.blue} />
+            <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>
+              {q.text}
+            </div>
 
-          <div style={{ marginTop: 14 }}>
-            <GlassInset disableBlur={disableBlur}>
-              <TopSummary ranked={ranked} />
-            </GlassInset>
-          </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: 10,
+                marginTop: 16,
+              }}
+            >
+              <GlassAnswerButton active={selected === 0} onClick={() => setAnswer(0)}>
+                0
+                <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
+                  не про меня
+                </span>
+              </GlassAnswerButton>
+              <GlassAnswerButton active={selected === 1} onClick={() => setAnswer(1)}>
+                1
+                <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
+                  иногда
+                </span>
+              </GlassAnswerButton>
+              <GlassAnswerButton active={selected === 2} onClick={() => setAnswer(2)}>
+                2
+                <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
+                  часто
+                </span>
+              </GlassAnswerButton>
+              <GlassAnswerButton active={selected === 3} onClick={() => setAnswer(3)}>
+                3
+                <span style={{ display: "block", fontSize: 12, opacity: 0.65 }}>
+                  это я
+                </span>
+              </GlassAnswerButton>
+            </div>
 
-          <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-            <GlassButton disableBlur={disableBlur} onClick={share}>
-              Поделиться (скопировать)
-            </GlassButton>
-            <GlassButton disableBlur={disableBlur} variant="ghost" onClick={() => setStage("test")}>
-              Вернуться к вопросам
-            </GlassButton>
-            <GlassButton disableBlur={disableBlur} variant="ghost" onClick={reset}>
-              Пройти заново
-            </GlassButton>
-          </div>
-        </GlassCard>
-      )}
-    </div>
+            <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
+              <GlassButton disableBlur={disableBlur} variant="ghost" onClick={reset}>
+                Начать сначала
+              </GlassButton>
+
+              <div style={{ flex: 1 }} />
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <GlassButton
+                  disableBlur={disableBlur}
+                  variant="ghost"
+                  disabled={!canPrev}
+                  onClick={prev}
+                >
+                  Назад
+                </GlassButton>
+                <GlassButton
+                  disableBlur={disableBlur}
+                  variant="ghost"
+                  disabled={!canNext}
+                  onClick={next}
+                >
+                  Вперёд
+                </GlassButton>
+                {isComplete && (
+                  <GlassButton disableBlur={disableBlur} onClick={finish}>
+                    Результат
+                  </GlassButton>
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>
+              Совет: отвечай быстро, как чувствуешь.
+            </div>
+          </GlassCard>
+        )}
+
+        {stage === "result" && (
+          <GlassCard disableBlur={disableBlur}>
+            <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>Результат</h2>
+
+            <ScoreRow color="red" value={scores.red} />
+            <ScoreRow color="yellow" value={scores.yellow} />
+            <ScoreRow color="green" value={scores.green} />
+            <ScoreRow color="blue" value={scores.blue} />
+
+            <div style={{ marginTop: 14 }}>
+              <GlassInset disableBlur={disableBlur}>
+                <TopSummary ranked={ranked} />
+              </GlassInset>
+            </div>
+
+            <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
+              <GlassButton disableBlur={disableBlur} onClick={share}>
+                Поделиться (скопировать)
+              </GlassButton>
+              <GlassButton
+                disableBlur={disableBlur}
+                variant="ghost"
+                onClick={() => setStage("test")}
+              >
+                Вернуться к вопросам
+              </GlassButton>
+              <GlassButton disableBlur={disableBlur} variant="ghost" onClick={reset}>
+                Пройти заново
+              </GlassButton>
+            </div>
+          </GlassCard>
+        )}
+      </div>
+    </>
   );
 }
 
 /* ---------- текстовые стили ---------- */
-const p0: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
-const p1: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
+const p0: React.CSSProperties = {
+  margin: "10px 0 0",
+  opacity: 0.88,
+  lineHeight: 1.45,
+};
+const p1: React.CSSProperties = {
+  margin: "10px 0 0",
+  opacity: 0.88,
+  lineHeight: 1.45,
+};
 const h: React.CSSProperties = { marginTop: 10, fontWeight: 800, opacity: 0.9 };
-const ul: React.CSSProperties = { margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, opacity: 0.92 };
+const ul: React.CSSProperties = {
+  margin: "6px 0 0 18px",
+  padding: 0,
+  lineHeight: 1.35,
+  opacity: 0.92,
+};
 const li: React.CSSProperties = { marginTop: 4 };
 
 /* ===================== 🍏 Liquid Glass UI ===================== */
@@ -449,7 +570,8 @@ function AmbientBackground() {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: -1,
+        zIndex: 0, // ✅ было -1
+        pointerEvents: "none",
         background:
           "radial-gradient(900px 500px at 20% 10%, rgba(120,170,255,0.28), transparent 60%)," +
           "radial-gradient(900px 500px at 80% 20%, rgba(255,120,200,0.22), transparent 55%)," +
@@ -460,7 +582,13 @@ function AmbientBackground() {
   );
 }
 
-function GlassCard({ children, disableBlur }: { children: React.ReactNode; disableBlur?: boolean }) {
+function GlassCard({
+  children,
+  disableBlur,
+}: {
+  children: React.ReactNode;
+  disableBlur?: boolean;
+}) {
   const blur = disableBlur ? "none" : "blur(18px) saturate(160%)";
   const bg = disableBlur ? "rgba(18,22,32,0.92)" : "rgba(255,255,255,0.08)";
 
@@ -476,9 +604,10 @@ function GlassCard({ children, disableBlur }: { children: React.ReactNode; disab
         WebkitBackdropFilter: blur,
         position: "relative",
         overflow: "hidden",
+        zIndex: 1, // ✅ поверх AmbientBackground
       }}
     >
-      {/* ✅ ВАЖНО: mixBlendMode выключаем на iOS TG → именно он часто даёт белые блоки */}
+      {/* ✅ mixBlendMode выключаем на iOS TG → часто даёт белые блоки */}
       <div
         aria-hidden
         style={{
@@ -497,7 +626,13 @@ function GlassCard({ children, disableBlur }: { children: React.ReactNode; disab
   );
 }
 
-function GlassInset({ children, disableBlur }: { children: React.ReactNode; disableBlur?: boolean }) {
+function GlassInset({
+  children,
+  disableBlur,
+}: {
+  children: React.ReactNode;
+  disableBlur?: boolean;
+}) {
   const blur = disableBlur ? "none" : "blur(14px) saturate(140%)";
   const bg = disableBlur ? "rgba(18,22,32,0.72)" : "rgba(255,255,255,0.06)";
 
@@ -556,7 +691,9 @@ function GlassButton({
       : {
           ...base,
           color: "rgba(255,255,255,0.92)",
-          background: disableBlur ? "rgba(18,22,32,0.55)" : "rgba(255,255,255,0.06)",
+          background: disableBlur
+            ? "rgba(18,22,32,0.55)"
+            : "rgba(255,255,255,0.06)",
           border: "1px solid rgba(255,255,255,0.14)",
           backdropFilter: disableBlur ? "none" : "blur(14px) saturate(140%)",
           WebkitBackdropFilter: disableBlur ? "none" : "blur(14px) saturate(140%)",
@@ -602,17 +739,18 @@ function GlassAnswerButton({
       style={{
         borderRadius: 18,
         padding: 12,
-
-        // ✅ всегда без blur (у тебя уже было)
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
-
         background: active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.12)",
-        border: active ? "1px solid rgba(255,255,255,0.55)" : "1px solid rgba(255,255,255,0.22)",
+        border: active
+          ? "1px solid rgba(255,255,255,0.55)"
+          : "1px solid rgba(255,255,255,0.22)",
         color: "rgba(255,255,255,0.95)",
         cursor: "pointer",
         textAlign: "center",
-        boxShadow: active ? "0 10px 24px rgba(0,0,0,0.28)" : "0 6px 16px rgba(0,0,0,0.18)",
+        boxShadow: active
+          ? "0 10px 24px rgba(0,0,0,0.28)"
+          : "0 6px 16px rgba(0,0,0,0.18)",
         WebkitTapHighlightColor: "transparent",
         appearance: "none",
         WebkitAppearance: "none",
@@ -680,18 +818,28 @@ function GlassDisclosure({
         </span>
       </button>
 
-      {open && <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.9)" }}>{body}</div>}
+      {open && (
+        <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.9)" }}>
+          {body}
+        </div>
+      )}
     </div>
   );
 }
 
 /* ===================== Existing logic components ===================== */
 
-function Header({ progress, disableBlur }: { progress?: number; disableBlur?: boolean }) {
+function Header({
+  progress,
+  disableBlur,
+}: {
+  progress?: number;
+  disableBlur?: boolean;
+}) {
   if (typeof progress !== "number") return null;
 
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 12, position: "relative", zIndex: 1 }}>
       <div
         style={{
           marginTop: 10,
@@ -764,15 +912,27 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
   return (
     <div>
       <div style={{ fontSize: 16, fontWeight: 900, color: "rgba(255,255,255,0.92)" }}>
-        Твой профиль: {colorEmoji(top1.color)} {colorLabel(top1.color)} + {colorEmoji(top2.color)}{" "}
-        {colorLabel(top2.color)}
+        Твой профиль: {colorEmoji(top1.color)} {colorLabel(top1.color)} +{" "}
+        {colorEmoji(top2.color)} {colorLabel(top2.color)}
       </div>
 
       <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-        <TipBlock title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`} items={t1.strengths} />
-        <TipBlock title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`} items={t2.strengths} />
-        <TipBlock title="Триггеры" items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
-        <TipBlock title="Как с тобой общаться" items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
+        <TipBlock
+          title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`}
+          items={t1.strengths}
+        />
+        <TipBlock
+          title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`}
+          items={t2.strengths}
+        />
+        <TipBlock
+          title="Триггеры"
+          items={[...t1.triggers, ...t2.triggers].slice(0, 3)}
+        />
+        <TipBlock
+          title="Как с тобой общаться"
+          items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)}
+        />
       </div>
     </div>
   );
@@ -781,8 +941,24 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
 function TipBlock({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
-      <div style={{ fontSize: 13, opacity: 0.8, fontWeight: 800, color: "rgba(255,255,255,0.9)" }}>{title}</div>
-      <ul style={{ margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, color: "rgba(255,255,255,0.9)" }}>
+      <div
+        style={{
+          fontSize: 13,
+          opacity: 0.8,
+          fontWeight: 800,
+          color: "rgba(255,255,255,0.9)",
+        }}
+      >
+        {title}
+      </div>
+      <ul
+        style={{
+          margin: "6px 0 0 18px",
+          padding: 0,
+          lineHeight: 1.35,
+          color: "rgba(255,255,255,0.9)",
+        }}
+      >
         {items.map((x) => (
           <li key={x} style={{ marginTop: 4 }}>
             {x}
