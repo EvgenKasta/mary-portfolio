@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     // /start (и /start payload)
     if (text.startsWith("/start")) {
       const caption =
-        "Привет! 👋\n\nЭто тест DISC Colors.\nНажми кнопку ниже — открою тест ✅\n\n(Откроется в режиме WebApp)";
+        "Привет! 👋\n\nЭто тест DISC Colors.\nНажми кнопку ниже — открою тест \n\nБолее 80% компаний из списка Fortune 500 применяют эту систему для анализа сотрудников ✅\n\n(Откроется в режиме WebApp)";
 
       // Вариант 1: отправляем картинку по URL (лучший для Vercel)
       // Поставь START_PHOTO_URL в env (например, картинка на CDN/telegra.ph/discord/любая https ссылка)
