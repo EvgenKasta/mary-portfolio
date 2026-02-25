@@ -558,14 +558,29 @@ function GlassAnswerButton({
       style={{
         borderRadius: 18,
         padding: 12,
-        border: active ? "1px solid rgba(255,255,255,0.42)" : "1px solid rgba(255,255,255,0.12)",
-        background: active ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.06)",
-        color: "rgba(255,255,255,0.92)",
+
+        // ❌ убрали blur
+        backdropFilter: "none",
+        WebkitBackdropFilter: "none",
+
+        // ✅ псевдо glass
+        background: active
+          ? "rgba(255,255,255,0.22)"
+          : "rgba(255,255,255,0.12)",
+
+        border: active
+          ? "1px solid rgba(255,255,255,0.55)"
+          : "1px solid rgba(255,255,255,0.22)",
+
+        color: "rgba(255,255,255,0.95)",
         cursor: "pointer",
         textAlign: "center",
-        backdropFilter: "blur(16px) saturate(150%)",
-        WebkitBackdropFilter: "blur(16px) saturate(150%)",
-        boxShadow: active ? "0 10px 26px rgba(0,0,0,0.22)" : "none",
+
+        boxShadow: active
+          ? "0 10px 24px rgba(0,0,0,0.28)"
+          : "0 6px 16px rgba(0,0,0,0.18)",
+
+        WebkitTapHighlightColor: "transparent",
       }}
     >
       {children}
