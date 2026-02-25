@@ -29,6 +29,15 @@ export default function TestApp() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isTg, setIsTg] = useState(false);
 
+  // ✅ FIX: iOS Telegram WebView ломает backdrop-filter слоями → белые плитки/экран
+  const [disableBlur, setDisableBlur] = useState(false);
+  useEffect(() => {
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
+    const isiOS = /iPhone|iPad|iPod/i.test(ua);
+    const isTelegramUA = /Telegram/i.test(ua);
+    setDisableBlur(isiOS && isTelegramUA);
+  }, []);
+
   useEffect(() => {
     const { isTg } = tgSafeInit();
     setIsTg(isTg);
@@ -215,10 +224,10 @@ ${list(howToTalk)}
     <div style={shellStyle}>
       <AmbientBackground />
 
-      <Header progress={stage === "test" ? progress : undefined} />
+      <Header disableBlur={disableBlur} progress={stage === "test" ? progress : undefined} />
 
       {stage === "start" && (
-        <GlassCard>
+        <GlassCard disableBlur={disableBlur}>
           <h1 style={{ marginTop: 0, marginBottom: 10, fontSize: 22, letterSpacing: 0.2 }}>
             Тест по психотипам (4 цвета)
           </h1>
@@ -229,6 +238,7 @@ ${list(howToTalk)}
 
           <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
             <GlassDisclosure
+              disableBlur={disableBlur}
               title="🔴 Красный — результат, скорость, лидерство"
               body={
                 <>
@@ -247,6 +257,7 @@ ${list(howToTalk)}
             />
 
             <GlassDisclosure
+              disableBlur={disableBlur}
               title="🟡 Жёлтый — энергия, идеи, общение"
               body={
                 <>
@@ -265,6 +276,7 @@ ${list(howToTalk)}
             />
 
             <GlassDisclosure
+              disableBlur={disableBlur}
               title="🟢 Зелёный — стабильность, поддержка, команда"
               body={
                 <>
@@ -283,6 +295,7 @@ ${list(howToTalk)}
             />
 
             <GlassDisclosure
+              disableBlur={disableBlur}
               title="🔵 Синий — логика, анализ, системность"
               body={
                 <>
@@ -302,10 +315,10 @@ ${list(howToTalk)}
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-            <GlassButton onClick={start}>Начать тест</GlassButton>
+            <GlassButton disableBlur={disableBlur} onClick={start}>Начать тест</GlassButton>
 
             {Object.keys(answers).length > 0 && (
-              <GlassButton variant="ghost" onClick={() => setStage("test")}>
+              <GlassButton disableBlur={disableBlur} variant="ghost" onClick={() => setStage("test")}>
                 Продолжить
               </GlassButton>
             )}
@@ -318,7 +331,7 @@ ${list(howToTalk)}
       )}
 
       {stage === "test" && (
-        <GlassCard>
+        <GlassCard disableBlur={disableBlur}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
             <div style={{ fontSize: 13, opacity: 0.75 }}>
               Вопрос {index + 1} / {MAX_Q}
@@ -350,20 +363,20 @@ ${list(howToTalk)}
           </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-            <GlassButton variant="ghost" onClick={reset}>
+            <GlassButton disableBlur={disableBlur} variant="ghost" onClick={reset}>
               Начать сначала
             </GlassButton>
 
             <div style={{ flex: 1 }} />
 
             <div style={{ display: "flex", gap: 10 }}>
-              <GlassButton variant="ghost" disabled={!canPrev} onClick={prev}>
+              <GlassButton disableBlur={disableBlur} variant="ghost" disabled={!canPrev} onClick={prev}>
                 Назад
               </GlassButton>
-              <GlassButton variant="ghost" disabled={!canNext} onClick={next}>
+              <GlassButton disableBlur={disableBlur} variant="ghost" disabled={!canNext} onClick={next}>
                 Вперёд
               </GlassButton>
-              {isComplete && <GlassButton onClick={finish}>Результат</GlassButton>}
+              {isComplete && <GlassButton disableBlur={disableBlur} onClick={finish}>Результат</GlassButton>}
             </div>
           </div>
 
@@ -372,7 +385,7 @@ ${list(howToTalk)}
       )}
 
       {stage === "result" && (
-        <GlassCard>
+        <GlassCard disableBlur={disableBlur}>
           <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>Результат</h2>
 
           <ScoreRow color="red" value={scores.red} />
@@ -381,17 +394,17 @@ ${list(howToTalk)}
           <ScoreRow color="blue" value={scores.blue} />
 
           <div style={{ marginTop: 14 }}>
-            <GlassInset>
+            <GlassInset disableBlur={disableBlur}>
               <TopSummary ranked={ranked} />
             </GlassInset>
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-            <GlassButton onClick={share}>Поделиться (скопировать)</GlassButton>
-            <GlassButton variant="ghost" onClick={() => setStage("test")}>
+            <GlassButton disableBlur={disableBlur} onClick={share}>Поделиться (скопировать)</GlassButton>
+            <GlassButton disableBlur={disableBlur} variant="ghost" onClick={() => setStage("test")}>
               Вернуться к вопросам
             </GlassButton>
-            <GlassButton variant="ghost" onClick={reset}>
+            <GlassButton disableBlur={disableBlur} variant="ghost" onClick={reset}>
               Пройти заново
             </GlassButton>
           </div>
@@ -428,17 +441,26 @@ function AmbientBackground() {
   );
 }
 
-function GlassCard({ children }: { children: React.ReactNode }) {
+function GlassCard({
+  children,
+  disableBlur,
+}: {
+  children: React.ReactNode;
+  disableBlur?: boolean;
+}) {
+  const blur = disableBlur ? "none" : "blur(18px) saturate(160%)";
+  const bg = disableBlur ? "rgba(18,22,32,0.92)" : "rgba(255,255,255,0.08)";
+
   return (
     <div
       style={{
         padding: 16,
         borderRadius: 22,
-        background: "rgba(255,255,255,0.08)",
+        background: bg,
         border: "1px solid rgba(255,255,255,0.16)",
         boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
-        backdropFilter: "blur(18px) saturate(160%)",
-        WebkitBackdropFilter: "blur(18px) saturate(160%)",
+        backdropFilter: blur,
+        WebkitBackdropFilter: blur,
         position: "relative",
         overflow: "hidden",
       }}
@@ -453,7 +475,7 @@ function GlassCard({ children }: { children: React.ReactNode }) {
             "linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.10))",
           pointerEvents: "none",
           mixBlendMode: "overlay",
-          opacity: 0.7,
+          opacity: disableBlur ? 0.35 : 0.7,
         }}
       />
       <div style={{ position: "relative" }}>{children}</div>
@@ -461,16 +483,25 @@ function GlassCard({ children }: { children: React.ReactNode }) {
   );
 }
 
-function GlassInset({ children }: { children: React.ReactNode }) {
+function GlassInset({
+  children,
+  disableBlur,
+}: {
+  children: React.ReactNode;
+  disableBlur?: boolean;
+}) {
+  const blur = disableBlur ? "none" : "blur(14px) saturate(140%)";
+  const bg = disableBlur ? "rgba(18,22,32,0.72)" : "rgba(255,255,255,0.06)";
+
   return (
     <div
       style={{
         padding: 12,
         borderRadius: 18,
-        background: "rgba(255,255,255,0.06)",
+        background: bg,
         border: "1px solid rgba(255,255,255,0.12)",
-        backdropFilter: "blur(14px) saturate(140%)",
-        WebkitBackdropFilter: "blur(14px) saturate(140%)",
+        backdropFilter: blur,
+        WebkitBackdropFilter: blur,
       }}
     >
       {children}
@@ -483,11 +514,13 @@ function GlassButton({
   onClick,
   disabled,
   variant = "solid",
+  disableBlur,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   variant?: "solid" | "ghost";
+  disableBlur?: boolean;
 }) {
   const base: React.CSSProperties = {
     borderRadius: 18,
@@ -512,10 +545,10 @@ function GlassButton({
       : {
           ...base,
           color: "rgba(255,255,255,0.92)",
-          background: "rgba(255,255,255,0.06)",
+          background: disableBlur ? "rgba(18,22,32,0.55)" : "rgba(255,255,255,0.06)",
           border: "1px solid rgba(255,255,255,0.14)",
-          backdropFilter: "blur(14px) saturate(140%)",
-          WebkitBackdropFilter: "blur(14px) saturate(140%)",
+          backdropFilter: disableBlur ? "none" : "blur(14px) saturate(140%)",
+          WebkitBackdropFilter: disableBlur ? "none" : "blur(14px) saturate(140%)",
         };
 
   return (
@@ -559,27 +592,18 @@ function GlassAnswerButton({
         borderRadius: 18,
         padding: 12,
 
-        // ❌ убрали blur
+        // ❌ убрали blur (у тебя уже так было)
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
 
-        // ✅ псевдо glass
-        background: active
-          ? "rgba(255,255,255,0.22)"
-          : "rgba(255,255,255,0.12)",
-
-        border: active
-          ? "1px solid rgba(255,255,255,0.55)"
-          : "1px solid rgba(255,255,255,0.22)",
+        background: active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.12)",
+        border: active ? "1px solid rgba(255,255,255,0.55)" : "1px solid rgba(255,255,255,0.22)",
 
         color: "rgba(255,255,255,0.95)",
         cursor: "pointer",
         textAlign: "center",
 
-        boxShadow: active
-          ? "0 10px 24px rgba(0,0,0,0.28)"
-          : "0 6px 16px rgba(0,0,0,0.18)",
-
+        boxShadow: active ? "0 10px 24px rgba(0,0,0,0.28)" : "0 6px 16px rgba(0,0,0,0.18)",
         WebkitTapHighlightColor: "transparent",
       }}
     >
@@ -588,17 +612,25 @@ function GlassAnswerButton({
   );
 }
 
-function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode }) {
+function GlassDisclosure({
+  title,
+  body,
+  disableBlur,
+}: {
+  title: string;
+  body: React.ReactNode;
+  disableBlur?: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
     <div
       style={{
         borderRadius: 16,
-        background: "rgba(0,0,0,0.18)",
+        background: disableBlur ? "rgba(18,22,32,0.60)" : "rgba(0,0,0,0.18)",
         border: "1px solid rgba(255,255,255,0.10)",
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
+        backdropFilter: disableBlur ? "none" : "blur(10px)",
+        WebkitBackdropFilter: disableBlur ? "none" : "blur(10px)",
         overflow: "hidden",
       }}
     >
@@ -641,8 +673,8 @@ function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode
 
 /* ===================== Existing logic components ===================== */
 
-// ✅ ИЗМЕНЕНО #1: Header без любых надписей (только прогресс)
-function Header({ progress }: { progress?: number }) {
+// ✅ Header: только прогресс, но blur отключаем в iOS TG
+function Header({ progress, disableBlur }: { progress?: number; disableBlur?: boolean }) {
   if (typeof progress !== "number") return null;
 
   return (
@@ -654,8 +686,8 @@ function Header({ progress }: { progress?: number }) {
           borderRadius: 999,
           background: "rgba(255,255,255,0.10)",
           border: "1px solid rgba(255,255,255,0.10)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          backdropFilter: disableBlur ? "none" : "blur(12px)",
+          WebkitBackdropFilter: disableBlur ? "none" : "blur(12px)",
           overflow: "hidden",
         }}
       >
