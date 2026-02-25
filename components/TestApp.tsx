@@ -16,6 +16,7 @@ type Stage = "start" | "test" | "result";
 
 const MAX_Q = 40;
 const STORAGE_KEY = "disc_colors_answers_v1";
+const USER_STORAGE_KEY = "disc_colors_user_v1";
 
 function clampScore(v: number) {
   if (v < 0) return 0;
@@ -23,25 +24,63 @@ function clampScore(v: number) {
   return v;
 }
 
-type TgUser = {
-  id: number;
-  username?: string;
-  first_name?: string;
-  last_name?: string;
-};
+/** ✅ Достаём юзера максимально надёжно */
+function extractTgUser(): any | null {
+  try {
+    const tg = getTgWebApp();
+    if (!tg) return null;
 
-function formatUserBlock(user?: TgUser | null) {
-  if (!user) return ""; // если открыто не из TG — блока не будет
+    // 1) initDataUnsafe.user (быстро)
+    const u1 = (tg as any)?.initDataUnsafe?.user;
+    if (u1 && u1.id) return u1;
 
-  const username = user.username ? `@${user.username}` : "—";
-  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "—";
+    // 2) парсим из initData параметр user
+    const initData = tg.initData || "";
+    if (!initData) return null;
 
-  return `👤 Пользователь:
-ID: ${user.id}
-Логин: ${username}
-Имя: ${fullName}
+    const p = new URLSearchParams(initData);
+    const userRaw = p.get("user");
+    if (!userRaw) return null;
 
-`;
+    const u2 = JSON.parse(userRaw);
+    if (u2 && u2.id) return u2;
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function formatUserBlock(user: any | null) {
+  const username = user?.username ? `@${user.username}` : "без username";
+  const fullName =
+    [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "не указано";
+  const userId = user?.id ? String(user.id) : "unknown";
+
+  return (
+    `👤 Пользователь:\n` +
+    `ID: ${userId}\n` +
+    `Логин: ${username}\n` +
+    `Имя: ${fullName}\n\n`
+  );
+}
+
+function loadSavedUser(): any | null {
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveUser(user: any) {
+  try {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  } catch {
+    // ignore
+  }
 }
 
 export default function TestApp() {
@@ -50,23 +89,14 @@ export default function TestApp() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isTg, setIsTg] = useState(false);
 
-  // ✅ сохраняем, кто проходит тест
-  const [tgUser, setTgUser] = useState<TgUser | null>(null);
-
   useEffect(() => {
     const { isTg } = tgSafeInit();
     setIsTg(isTg);
 
-    // ✅ берём юзера сразу при открытии Mini App
-    try {
-      const tg = getTgWebApp();
-      const user = (tg as any)?.initDataUnsafe?.user as TgUser | undefined;
-      if (user?.id) setTgUser(user);
-    } catch {
-      // ignore
-    }
+    // ✅ ВАЖНО: сохраняем юзера сразу при открытии WebApp
+    const user = extractTgUser();
+    if (user?.id) saveUser(user);
 
-    // ✅ восстановление состояния
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -74,12 +104,10 @@ export default function TestApp() {
           answers?: Record<number, number>;
           index?: number;
           stage?: Stage;
-          tgUser?: TgUser | null;
         };
         if (parsed.answers) setAnswers(parsed.answers);
         if (typeof parsed.index === "number") setIndex(parsed.index);
         if (parsed.stage) setStage(parsed.stage);
-        if (parsed.tgUser?.id) setTgUser(parsed.tgUser);
       }
     } catch {
       // ignore
@@ -90,12 +118,12 @@ export default function TestApp() {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ answers, index, stage, tgUser })
+        JSON.stringify({ answers, index, stage })
       );
     } catch {
       // ignore
     }
-  }, [answers, index, stage, tgUser]);
+  }, [answers, index, stage]);
 
   const q = QUESTIONS_RU[index];
 
@@ -121,14 +149,9 @@ export default function TestApp() {
     setStage("test");
     setIndex(0);
 
-    // ✅ если вдруг tgUser ещё не успел проставиться — пробуем ещё раз
-    try {
-      const tg = getTgWebApp();
-      const user = (tg as any)?.initDataUnsafe?.user as TgUser | undefined;
-      if (user?.id) setTgUser(user);
-    } catch {
-      // ignore
-    }
+    // ✅ На всякий случай — ещё раз пробуем сохранить юзера при старте теста
+    const user = extractTgUser();
+    if (user?.id) saveUser(user);
   }
 
   function reset() {
@@ -142,7 +165,7 @@ export default function TestApp() {
     }
   }
 
-  // ✅ Отчёт теперь начинается с блока пользователя (если он есть)
+  // ✅ Копируем ВЕСЬ результат + пояснение + ссылка
   function shareText() {
     const top1 = ranked[0];
     const top2 = ranked[1];
@@ -156,9 +179,7 @@ export default function TestApp() {
     const triggers = [...t1.triggers, ...t2.triggers].slice(0, 6);
     const howToTalk = [...t1.howToTalk, ...t2.howToTalk].slice(0, 8);
 
-    const userBlock = formatUserBlock(tgUser);
-
-    return `${userBlock}Мой профиль DISC:
+    return `Мой профиль DISC:
 ${colorEmoji(top1.color)} ${colorLabel(top1.color)} — ${top1.value}
 ${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
 
@@ -186,58 +207,33 @@ ${list(howToTalk)}
   }
 
   async function notifyOwner() {
-  try {
-    const tg = getTgWebApp();
+    try {
+      const tg = getTgWebApp();
+      const initData = tg?.initData || "";
 
-    const initData = tg?.initData || "";
+      // ✅ Берём юзера так:
+      // 1) пытаемся из Telegram прямо сейчас
+      // 2) если нет — берём из localStorage (сохранённого при старте)
+      const userNow = extractTgUser();
+      const userSaved = loadSavedUser();
+      const user = userNow?.id ? userNow : userSaved;
 
-    // ✅ достаём user максимально надёжно:
-    // 1) пробуем tg.initDataUnsafe.user
-    // 2) если пусто — парсим из initData параметр user
-    let user: any = (tg as any)?.initDataUnsafe?.user || null;
+      const finalText = (formatUserBlock(user) + shareText()).trim();
 
-    if (!user && initData) {
-      try {
-        const p = new URLSearchParams(initData);
-        const userRaw = p.get("user");
-        if (userRaw) user = JSON.parse(userRaw);
-      } catch {
-        // ignore
-      }
+      const secret = (process.env.NEXT_PUBLIC_NOTIFY_SECRET || "").trim();
+
+      const body: any = { text: finalText, secret };
+      if (initData) body.initData = initData;
+
+      await fetch("/api/notify-owner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      // ignore
     }
-
-    const username = user?.username ? `@${user.username}` : "без username";
-    const fullName =
-      [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "не указано";
-    const userId = user?.id ? String(user.id) : "unknown";
-
-    const userBlock =
-      `👤 Пользователь:\n` +
-      `ID: ${userId}\n` +
-      `Логин: ${username}\n` +
-      `Имя: ${fullName}\n\n`;
-
-    const messageText = (userBlock + shareText()).trim();
-
-    const secret = (process.env.NEXT_PUBLIC_NOTIFY_SECRET || "").trim();
-
-    const body: any = { text: messageText, secret };
-    if (initData) body.initData = initData;
-
-    const res = await fetch("/api/notify-owner", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      console.error("notifyOwner failed:", res.status, t);
-    }
-  } catch (e) {
-    console.error("notifyOwner crash:", e);
   }
-}
 
   function setAnswer(value: number) {
     const v = clampScore(value);
@@ -361,7 +357,8 @@ ${list(howToTalk)}
                     <b>Мотивация:</b> признание, свобода, эмоции.
                   </p>
                   <p style={p1}>
-                    <b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.
+                    <b>Триггеры:</b> рутина, жёсткие рамки, критика без
+                    поддержки.
                   </p>
                 </>
               }
@@ -407,7 +404,8 @@ ${list(howToTalk)}
                     <b>Мотивация:</b> точность, факты, компетентность.
                   </p>
                   <p style={p1}>
-                    <b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.
+                    <b>Триггеры:</b> хаос, поверхностность, эмоциональное
+                    давление.
                   </p>
                 </>
               }
@@ -418,12 +416,15 @@ ${list(howToTalk)}
             <GlassButton onClick={start}>Начать тест</GlassButton>
 
             {Object.keys(answers).length > 0 && (
-              <GlassButton onClick={() => setStage("test")}>Продолжить</GlassButton>
+              <GlassButton onClick={() => setStage("test")}>
+                Продолжить
+              </GlassButton>
             )}
           </div>
 
           <div style={{ marginTop: 12, opacity: 0.65, fontSize: 12 }}>
-            * Упрощённая модель (DISC-подобная). Результат — подсказка, не диагноз.
+            * Упрощённая модель (DISC-подобная). Результат — подсказка, не
+            диагноз.
           </div>
         </GlassCard>
       )}
@@ -503,9 +504,7 @@ ${list(howToTalk)}
               <GlassButton disabled={!canNext} onClick={next}>
                 Вперёд
               </GlassButton>
-              {isComplete && (
-                <GlassButton onClick={finish}>Результат</GlassButton>
-              )}
+              {isComplete && <GlassButton onClick={finish}>Результат</GlassButton>}
             </div>
           </div>
 
@@ -546,10 +545,23 @@ ${list(howToTalk)}
 }
 
 /* ---------- текстовые стили ---------- */
-const p0: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
-const p1: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
+const p0: React.CSSProperties = {
+  margin: "10px 0 0",
+  opacity: 0.88,
+  lineHeight: 1.45,
+};
+const p1: React.CSSProperties = {
+  margin: "10px 0 0",
+  opacity: 0.88,
+  lineHeight: 1.45,
+};
 const h: React.CSSProperties = { marginTop: 10, fontWeight: 800, opacity: 0.95 };
-const ul: React.CSSProperties = { margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, opacity: 0.95 };
+const ul: React.CSSProperties = {
+  margin: "6px 0 0 18px",
+  padding: 0,
+  lineHeight: 1.35,
+  opacity: 0.95,
+};
 const li: React.CSSProperties = { marginTop: 4 };
 
 /* ===================== фон ===================== */
@@ -629,7 +641,9 @@ function GlassButton({
       style={{
         borderRadius: 18,
         padding: "12px 14px",
-        backgroundColor: disabled ? "rgba(60,70,90,0.6)" : "rgba(42,50,70,0.98)",
+        backgroundColor: disabled
+          ? "rgba(60,70,90,0.6)"
+          : "rgba(42,50,70,0.98)",
         border: "1px solid rgba(255,255,255,0.22)",
         color: "rgba(255,255,255,0.95)",
         cursor: disabled ? "not-allowed" : "pointer",
@@ -665,12 +679,18 @@ function AnswerButton({
       style={{
         borderRadius: 18,
         padding: 12,
-        backgroundColor: active ? "rgba(64,76,104,0.98)" : "rgba(42,50,70,0.98)",
-        border: active ? "1px solid rgba(255,255,255,0.40)" : "1px solid rgba(255,255,255,0.22)",
+        backgroundColor: active
+          ? "rgba(64,76,104,0.98)"
+          : "rgba(42,50,70,0.98)",
+        border: active
+          ? "1px solid rgba(255,255,255,0.40)"
+          : "1px solid rgba(255,255,255,0.22)",
         color: "rgba(255,255,255,0.95)",
         cursor: "pointer",
         textAlign: "center",
-        boxShadow: active ? "0 10px 24px rgba(0,0,0,0.28)" : "0 6px 16px rgba(0,0,0,0.18)",
+        boxShadow: active
+          ? "0 10px 24px rgba(0,0,0,0.28)"
+          : "0 6px 16px rgba(0,0,0,0.18)",
         WebkitTapHighlightColor: "transparent",
         appearance: "none",
         WebkitAppearance: "none",
@@ -683,7 +703,13 @@ function AnswerButton({
   );
 }
 
-function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode }) {
+function GlassDisclosure({
+  title,
+  body,
+}: {
+  title: string;
+  body: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -742,6 +768,8 @@ function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode
   );
 }
 
+/* ===================== Existing logic components ===================== */
+
 function Header({ progress }: { progress?: number }) {
   if (typeof progress !== "number") return null;
 
@@ -778,7 +806,13 @@ function ScoreRow({ color, value }: { color: Color; value: number }) {
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
         <div style={{ fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
           {colorEmoji(color)} {colorLabel(color)}
         </div>
@@ -825,10 +859,22 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
       </div>
 
       <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-        <TipBlock title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`} items={t1.strengths} />
-        <TipBlock title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`} items={t2.strengths} />
-        <TipBlock title="Триггеры" items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
-        <TipBlock title="Как с тобой общаться" items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
+        <TipBlock
+          title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`}
+          items={t1.strengths}
+        />
+        <TipBlock
+          title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`}
+          items={t2.strengths}
+        />
+        <TipBlock
+          title="Триггеры"
+          items={[...t1.triggers, ...t2.triggers].slice(0, 3)}
+        />
+        <TipBlock
+          title="Как с тобой общаться"
+          items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)}
+        />
       </div>
     </div>
   );
