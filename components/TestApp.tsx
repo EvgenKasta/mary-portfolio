@@ -211,24 +211,21 @@ ${list(howToTalk)}
     const tg = getTgWebApp();
     const initData = tg?.initData || "";
 
-    // ВАЖНО: user берём из initDataUnsafe (самый прямой источник)
-    const user = tg?.initDataUnsafe?.user || null;
-
-    // если открыли не из Telegram — нечего отправлять
-    if (!initData && !user) return;
-
     const text = shareText();
 
+    // ✅ юзер берём из initDataUnsafe (это то, что реально стабильно даёт Telegram)
+    const user = tg?.initDataUnsafe?.user || null;
+
     await fetch("/api/notify-owner", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    initData,
-    user: tg?.initDataUnsafe?.user || null,
-    text,
-    secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET || "",
-  }),
-});
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        initData,               // может быть пустым — ок
+        user,                   // ✅ вот это главное
+        text,
+        secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET || "", // ✅ фолбэк
+      }),
+    });
   } catch {
     // ignore
   }
