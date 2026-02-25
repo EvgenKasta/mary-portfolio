@@ -8,8 +8,16 @@ type TgUpdate = {
     message_id: number;
     text?: string;
     chat: { id: number };
-    from?: { id: number; username?: string; first_name?: string; last_name?: string };
-    web_app_data?: { data: string; button_text?: string };
+    from?: {
+      id: number;
+      username?: string;
+      first_name?: string;
+      last_name?: string;
+    };
+    web_app_data?: {
+      data: string; // то, что ты отправляешь через tg.sendData(...)
+      button_text?: string;
+    };
   };
 };
 
@@ -53,15 +61,11 @@ function startKeyboard(appUrl: string) {
 
 function formatUserBlock(from?: TgUpdate["message"]["from"]) {
   const username = from?.username ? `@${from.username}` : "без username";
-  const fullName = [from?.first_name, from?.last_name].filter(Boolean).join(" ") || "не указано";
-  const userId = from?.id ? String(from.id) : "unknown";
-
-  return (
-    `👤 Пользователь:\n` +
-    `ID: ${userId}\n` +
-    `Логин: ${username}\n` +
-    `Имя: ${fullName}\n\n`
-  );
+  const fullName = [from?.first_name, from?.last_name].filter(Boolean).join(" ");
+  return `👤 Пользователь:
+ID: ${from?.id ?? "unknown"}
+Логин: ${username}
+Имя: ${fullName || "не указано"}`;
 }
 
 export async function POST(req: Request) {
@@ -74,19 +78,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    const appUrl = getEnv("APP_URL"); // например https://mary-portfolio-xyz.vercel.app
-    const ownerChatId = getEnv("OWNER_CHAT_ID");
-
     const msg = update?.message;
     const text = msg?.text || "";
     const chatId = msg?.chat?.id;
 
     if (!chatId) return NextResponse.json({ ok: true });
 
-    // ✅ 1) /start
+    // 1) /start -> приветствие + кнопка
     if (text.startsWith("/start")) {
+      const appUrl = getEnv("APP_URL");
       const caption =
-        "Привет! 👋\n\nЭто тест DISC Colors.\nНажми кнопку ниже — открою тест ✅";
+        "Привет! 👋\n\nЭто тест DISC Colors.\nНажми кнопку ниже — открою тест ✅\n\n(Откроется в режиме WebApp)";
 
       const photoUrl = process.env.START_PHOTO_URL;
 
@@ -108,19 +110,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    // ✅ 2) Результат из WebApp через Telegram.WebApp.sendData()
-    const webData = msg?.web_app_data?.data;
-    if (webData) {
-      // webData может быть plain текстом или JSON — поддержим оба
-      let reportText = webData;
+    // 2) tg.sendData(...) -> Telegram присылает это как message.web_app_data
+    // Тут и добавляем пользователя, чтобы он НЕ пропадал
+    const wad = msg?.web_app_data?.data;
+    if (wad) {
+      const ownerChatId = getEnv("OWNER_CHAT_ID");
+
+      let payloadText = "";
       try {
-        const parsed = JSON.parse(webData);
-        if (typeof parsed?.text === "string") reportText = parsed.text;
+        // ожидаем JSON типа { text: "..." }
+        const parsed = JSON.parse(wad);
+        payloadText = String(parsed?.text || "").trim();
       } catch {
-        // not json
+        payloadText = String(wad || "").trim();
       }
 
-      const finalText = formatUserBlock(msg?.from) + String(reportText || "").trim();
+      if (!payloadText) return NextResponse.json({ ok: true });
+
+      const userBlock = formatUserBlock(msg?.from);
+      const finalText = `${userBlock}\n\n${payloadText}`;
 
       await tgCall("sendMessage", {
         chat_id: ownerChatId,
@@ -131,6 +139,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    // Остальное игнорим
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("bot webhook error:", e);
