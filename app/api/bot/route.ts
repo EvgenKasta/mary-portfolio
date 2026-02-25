@@ -1,97 +1,111 @@
-import crypto from "node:crypto";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-function verifyTelegramInitData(initData: string, botToken: string) {
-  const urlParams = new URLSearchParams(initData);
-  const hash = urlParams.get("hash");
-  urlParams.delete("hash");
+type TgUpdate = {
+  update_id: number;
+  message?: {
+    message_id: number;
+    text?: string;
+    chat: { id: number; type?: string };
+    from?: { id: number; username?: string; first_name?: string; last_name?: string };
+  };
+};
 
-  const dataCheckString = Array.from(urlParams.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join("\n");
-
-  const secretKey = crypto.createHash("sha256").update(botToken).digest();
-
-  const hmac = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
-
-  return !!hash && hmac === hash;
+function getEnv(name: string) {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing env: ${name}`);
+  return v;
 }
 
-async function tgSendMessage(text: string) {
-  const botToken = process.env.BOT_TOKEN || "";
-  const ownerChatId = process.env.OWNER_CHAT_ID || "";
+async function tgCall(method: string, payload: any) {
+  const token = getEnv("BOT_TOKEN");
+  const url = `https://api.telegram.org/bot${token}/${method}`;
 
-  if (!botToken || !ownerChatId) {
-    console.error("Missing env", { hasBotToken: !!botToken, hasOwnerChatId: !!ownerChatId });
-    return new Response("Missing env", { status: 500 });
-  }
-
-  const payload = {
-    chat_id: ownerChatId,
-    text,
-    disable_web_page_preview: true,
-  };
-
-  const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
-  const tgBodyText = await tgRes.text();
+  const data = await res.json().catch(() => null);
 
-  if (!tgRes.ok) {
-    console.error("Telegram sendMessage failed", { status: tgRes.status, body: tgBodyText });
-    return new Response("Telegram API error", { status: 502 });
+  if (!res.ok || !data?.ok) {
+    console.error("Telegram API error:", {
+      method,
+      status: res.status,
+      payload,
+      data,
+    });
   }
 
-  let tgBody: any = tgBodyText;
-  try {
-    tgBody = JSON.parse(tgBodyText);
-  } catch {}
+  return { res, data };
+}
 
-  return Response.json({ ok: true, telegram: tgBody });
+function startKeyboard(appUrl: string) {
+  return {
+    inline_keyboard: [
+      [
+        {
+          text: "🚀 Начать тест",
+          web_app: { url: appUrl },
+        },
+      ],
+    ],
+  };
 }
 
 export async function POST(req: Request) {
+  let update: TgUpdate | null = null;
+
   try {
-    const { initData, text, secret } = (await req.json()) as {
-      initData?: string;
-      text?: string;
-      secret?: string;
-    };
-
-    const botToken = process.env.BOT_TOKEN || "";
-    const serverSecret = process.env.NOTIFY_SECRET || "";
-
-    const messageText = String(text || "").trim();
-    if (!messageText) return new Response("Empty text", { status: 400 });
-
-    // ✅ Вариант А: если пришёл initData — валидируем по Telegram (как у тебя было)
-    if (initData && botToken) {
-      const ok = verifyTelegramInitData(initData, botToken);
-      if (!ok) {
-        console.error("Bad initData");
-        return new Response("Bad initData", { status: 403 });
-      }
-      return await tgSendMessage(messageText);
-    }
-
-    // ✅ Вариант Б: если initData нет — пускаем по секрету (надёжно во всех кейсах)
-    if (serverSecret && secret && secret === serverSecret) {
-      return await tgSendMessage(messageText);
-    }
-
-    console.error("Unauthorized notify", {
-      hasInitData: !!initData,
-      hasSecret: !!secret,
-      hasServerSecret: !!serverSecret,
-    });
-    return new Response("Unauthorized", { status: 403 });
-  } catch (e: any) {
-    console.error("notify-owner route error", e);
-    return new Response("Server error", { status: 500 });
+    update = (await req.json()) as TgUpdate;
+  } catch {
+    // Telegram иногда шлёт мусор/проверки — просто ок
+    return NextResponse.json({ ok: true });
   }
+
+  try {
+    const appUrl = getEnv("APP_URL"); // например https://your-app.vercel.app
+    const msg = update?.message;
+    const text = msg?.text || "";
+    const chatId = msg?.chat?.id;
+
+    if (!chatId) return NextResponse.json({ ok: true });
+
+    // /start (и /start payload)
+    if (text.startsWith("/start")) {
+      const caption =
+        "Привет! 👋\n\nЭто тест DISC Colors. \n\nБолее 80% компаний из списка Fortune 500 применяют эту систему для анализа сотрудников.\n\nНажми кнопку ниже — открою тест✅";
+
+      // Если хочешь картинку — добавь START_PHOTO_URL в env (https://...jpg/png)
+      const photoUrl = process.env.START_PHOTO_URL;
+
+      if (photoUrl) {
+        await tgCall("sendPhoto", {
+          chat_id: chatId,
+          photo: photoUrl,
+          caption,
+          reply_markup: startKeyboard(appUrl),
+        });
+      } else {
+        await tgCall("sendMessage", {
+          chat_id: chatId,
+          text: caption,
+          reply_markup: startKeyboard(appUrl),
+        });
+      }
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("bot webhook error:", e);
+    // важно всегда отвечать 200, чтобы Telegram не долбил ретраями
+    return NextResponse.json({ ok: true });
+  }
+}
+
+// Не обязательно, но удобно чтобы Telegram мог дернуть GET или ты мог проверить
+export async function GET() {
+  return NextResponse.json({ ok: true, route: "bot webhook. Use POST." });
 }
