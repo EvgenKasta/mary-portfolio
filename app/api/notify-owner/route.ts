@@ -26,27 +26,14 @@ type TgUser = {
   last_name?: string;
 };
 
-function normalizeUser(u: any): TgUser | null {
-  if (!u || typeof u !== "object") return null;
-
-  return {
-    id: typeof u.id === "number" ? u.id : undefined,
-    username: typeof u.username === "string" ? u.username : undefined,
-    first_name: typeof u.first_name === "string" ? u.first_name : undefined,
-    last_name: typeof u.last_name === "string" ? u.last_name : undefined,
-  };
-}
-
 function parseUserFromInitData(initData: string): TgUser | null {
   try {
     const params = new URLSearchParams(initData);
     const userRaw = params.get("user");
     if (!userRaw) return null;
-
-    // URLSearchParams обычно уже декодит, но iOS/клиенты иногда присылают по-разному — страхуемся
-    const maybeJson = userRaw.startsWith("{") ? userRaw : decodeURIComponent(userRaw);
-    const parsed = JSON.parse(maybeJson);
-    return normalizeUser(parsed);
+    const user = JSON.parse(userRaw);
+    if (!user || typeof user !== "object") return null;
+    return user as TgUser;
   } catch {
     return null;
   }
@@ -91,7 +78,6 @@ async function tgSendMessage(text: string) {
     return new Response("Telegram API error", { status: 502 });
   }
 
-  // оставляю как было — чтобы ты мог смотреть ответ телеги, если надо
   let tgBody: any = tgBodyText;
   try {
     tgBody = JSON.parse(tgBodyText);
@@ -106,7 +92,7 @@ export async function POST(req: Request) {
       initData?: string;
       text?: string;
       secret?: string;
-      user?: any; // если ты решишь присылать tg.initDataUnsafe.user — не обязаловка
+      user?: TgUser | null;
     };
 
     const botToken = process.env.BOT_TOKEN || "";
@@ -115,7 +101,7 @@ export async function POST(req: Request) {
     const messageText = String(text || "").trim();
     if (!messageText) return new Response("Empty text", { status: 400 });
 
-    // ✅ Вариант А: initData → проверяем как раньше (это твой рабочий путь)
+    // ✅ путь 1: initData → проверяем Telegram
     if (initData && botToken) {
       const ok = verifyTelegramInitData(initData, botToken);
       if (!ok) {
@@ -123,20 +109,15 @@ export async function POST(req: Request) {
         return new Response("Bad initData", { status: 403 });
       }
 
-      // ✅ ДОБАВЛЕНО: юзер — сначала из body.user (если пришёл), иначе из initData
-      const u = normalizeUser(user) || parseUserFromInitData(initData);
+      const u = (user && typeof user === "object" ? user : null) || parseUserFromInitData(initData);
       const finalText = `${formatUserBlock(u)}\n\n${messageText}`;
-
       return await tgSendMessage(finalText);
     }
 
-    // ✅ Вариант Б: secret → как раньше (чтобы ничего не сломать)
+    // ✅ путь 2: secret → как у тебя было (и теперь это спасает, когда initData пустой)
     if (serverSecret && secret && secret === serverSecret) {
-      // Тут initData может не быть — тогда юзера взять неоткуда,
-      // но если ты передал user из клиента — покажем его.
-      const u = normalizeUser(user);
+      const u = user && typeof user === "object" ? user : null;
       const finalText = u ? `${formatUserBlock(u)}\n\n${messageText}` : messageText;
-
       return await tgSendMessage(finalText);
     }
 
