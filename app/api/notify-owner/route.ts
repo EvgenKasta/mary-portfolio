@@ -2,6 +2,8 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
+/* ---------- verify ---------- */
+
 function verifyTelegramInitData(initData: string, botToken: string) {
   const urlParams = new URLSearchParams(initData);
   const hash = urlParams.get("hash");
@@ -18,7 +20,15 @@ function verifyTelegramInitData(initData: string, botToken: string) {
   return !!hash && hmac === hash;
 }
 
-function parseUserFromInitData(initData: string) {
+/* ---------- parse user ---------- */
+
+function parseUser(initData?: string, bodyUser?: any) {
+  // 1️⃣ если пришёл user из фронта — берём его
+  if (bodyUser) return bodyUser;
+
+  // 2️⃣ иначе пробуем из initData
+  if (!initData) return null;
+
   try {
     const params = new URLSearchParams(initData);
     const userRaw = params.get("user");
@@ -43,41 +53,38 @@ function formatUserBlock(user: any) {
   );
 }
 
+/* ---------- tg send ---------- */
+
 async function tgSendMessage(text: string) {
   const botToken = process.env.BOT_TOKEN || "";
   const ownerChatId = process.env.OWNER_CHAT_ID || "";
 
   if (!botToken || !ownerChatId) {
-    console.error("Missing env", { hasBotToken: !!botToken, hasOwnerChatId: !!ownerChatId });
+    console.error("Missing env");
     return new Response("Missing env", { status: 500 });
   }
-
-  const payload = {
-    chat_id: ownerChatId,
-    text,
-    disable_web_page_preview: true,
-  };
 
   const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      chat_id: ownerChatId,
+      text,
+      disable_web_page_preview: true,
+    }),
   });
 
   const tgBodyText = await tgRes.text();
 
   if (!tgRes.ok) {
-    console.error("Telegram sendMessage failed", { status: tgRes.status, body: tgBodyText });
+    console.error("Telegram error", tgBodyText);
     return new Response("Telegram API error", { status: 502 });
   }
 
-  let tgBody: any = tgBodyText;
-  try {
-    tgBody = JSON.parse(tgBodyText);
-  } catch {}
-
-  return Response.json({ ok: true, telegram: tgBody });
+  return Response.json({ ok: true });
 }
+
+/* ---------- route ---------- */
 
 export async function POST(req: Request) {
   try {
@@ -85,7 +92,7 @@ export async function POST(req: Request) {
       initData?: string;
       text?: string;
       secret?: string;
-      user?: any; // ✅ приходит из TMA
+      user?: any;
     };
 
     const botToken = process.env.BOT_TOKEN || "";
@@ -94,33 +101,33 @@ export async function POST(req: Request) {
     const messageText = String(text || "").trim();
     if (!messageText) return new Response("Empty text", { status: 400 });
 
-    // ✅ Собираем userBlock: сначала из body.user, если нет — пробуем из initData
-    const parsedUser = user || (initData ? parseUserFromInitData(initData) : null);
+    // ✅ user block
+    const parsedUser = parseUser(initData, user);
     const userBlock = formatUserBlock(parsedUser);
 
-    // ✅ Вариант А: если пришёл initData — валидируем по Telegram (как у тебя было)
+    /* ---------- вариант А (initData) ---------- */
+
     if (initData && botToken) {
       const ok = verifyTelegramInitData(initData, botToken);
       if (!ok) {
         console.error("Bad initData");
         return new Response("Bad initData", { status: 403 });
       }
+
       return await tgSendMessage(userBlock + messageText);
     }
 
-    // ✅ Вариант Б: если initData нет — пускаем по секрету (надёжно во всех кейсах)
+    /* ---------- вариант Б (secret) ---------- */
+
     if (serverSecret && secret && secret === serverSecret) {
       return await tgSendMessage(userBlock + messageText);
     }
 
-    console.error("Unauthorized notify", {
-      hasInitData: !!initData,
-      hasSecret: !!secret,
-      hasServerSecret: !!serverSecret,
-    });
+    console.error("Unauthorized notify");
     return new Response("Unauthorized", { status: 403 });
-  } catch (e: any) {
-    console.error("notify-owner route error", e);
+
+  } catch (e) {
+    console.error("notify-owner error", e);
     return new Response("Server error", { status: 500 });
   }
 }
