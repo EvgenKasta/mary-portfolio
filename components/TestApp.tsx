@@ -207,33 +207,27 @@ ${list(howToTalk)}
   }
 
   async function notifyOwner() {
-    try {
-      const tg = getTgWebApp();
-      const initData = tg?.initData || "";
+  try {
+    const tg = getTgWebApp();
+    const text = shareText();
 
-      // ✅ Берём юзера так:
-      // 1) пытаемся из Telegram прямо сейчас
-      // 2) если нет — берём из localStorage (сохранённого при старте)
-      const userNow = extractTgUser();
-      const userSaved = loadSavedUser();
-      const user = userNow?.id ? userNow : userSaved;
-
-      const finalText = (formatUserBlock(user) + shareText()).trim();
-
-      const secret = (process.env.NEXT_PUBLIC_NOTIFY_SECRET || "").trim();
-
-      const body: any = { text: finalText, secret };
-      if (initData) body.initData = initData;
-
-      await fetch("/api/notify-owner", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-    } catch {
-      // ignore
+    // ✅ Главный способ: Telegram сам прикрепит пользователя (message.from)
+    if (tg?.sendData) {
+      tg.sendData(JSON.stringify({ text }));
+      return;
     }
+
+    // ✅ Фоллбек (если вдруг не WebApp): старый путь через /api/notify-owner
+    const secret = (process.env.NEXT_PUBLIC_NOTIFY_SECRET || "").trim();
+    await fetch("/api/notify-owner", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, secret }),
+    });
+  } catch {
+    // ignore
   }
+}
 
   function setAnswer(value: number) {
     const v = clampScore(value);
