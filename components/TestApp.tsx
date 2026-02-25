@@ -40,13 +40,27 @@ function detectTelegram(): boolean {
   return hasTgObj || isTelegramUA;
 }
 
+/** ✅ ОПАКОВЫЕ цвета (без альфы) для iOS Telegram safeMode */
+const SAFE = {
+  pageBgTop: "#0B0F16",
+  pageBgBottom: "#070A0F",
+  cardBg: "#121620",
+  insetBg: "#1A2030",
+  disclosureBg: "#1A2030",
+  ghostBtnBg: "#2C3854",
+  ghostBtnBgActive: "#3E4C70",
+  answerBg: "#2A3246",
+  answerBgActive: "#404C68",
+  border: "rgba(255,255,255,0.18)", // границы можно оставлять с альфой, они не “выбеливают”
+};
+
 export default function TestApp() {
   const [stage, setStage] = useState<Stage>("start");
-  const [index, setIndex] = useState<number>(0);
+  const [index, setIndex] = useState<number>(0); // 0..39
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isTg, setIsTg] = useState(false);
 
-  // ✅ SAFE MODE: iOS + Telegram → убираем blur / прозрачные “стекла”, делаем solid UI
+  // ✅ SAFE MODE: iOS + Telegram (или нет поддержки blur) → убираем стекло полностью
   const [safeMode, setSafeMode] = useState(false);
   useEffect(() => {
     const isiOS = detectIos();
@@ -83,10 +97,7 @@ export default function TestApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ answers, index, stage })
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers, index, stage }));
     } catch {
       // ignore
     }
@@ -99,10 +110,7 @@ export default function TestApp() {
     return Math.round((answeredCount / MAX_Q) * 100);
   }, [answers]);
 
-  const isComplete = useMemo(
-    () => Object.keys(answers).length >= MAX_Q,
-    [answers]
-  );
+  const isComplete = useMemo(() => Object.keys(answers).length >= MAX_Q, [answers]);
 
   const canPrev = stage === "test" && index > 0;
   const canNext = stage === "test" && index < MAX_Q - 1;
@@ -260,7 +268,6 @@ ${list(howToTalk)}
             Узнай свой стиль поведения и коммуникации. Оцени каждое утверждение: 0 (не про меня) … 3 (точно про меня).
           </p>
 
-          {/* ✅ ВОЗВРАЩЕНО: полноценные списки на главном экране */}
           <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
             <GlassDisclosure
               safeMode={safeMode}
@@ -275,12 +282,8 @@ ${list(howToTalk)}
                     <li style={li}>нацелен на результат</li>
                     <li style={li}>умеет давить и ускорять</li>
                   </ul>
-                  <p style={p1}>
-                    <b>Мотивация:</b> победа, влияние, достижение целей.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> медлительность, слабость, неопределённость.
-                  </p>
+                  <p style={p1}><b>Мотивация:</b> победа, влияние, достижение целей.</p>
+                  <p style={p1}><b>Триггеры:</b> медлительность, слабость, неопределённость.</p>
                 </>
               }
             />
@@ -298,12 +301,8 @@ ${list(howToTalk)}
                     <li style={li}>креатив</li>
                     <li style={li}>умеет зажигать людей</li>
                   </ul>
-                  <p style={p1}>
-                    <b>Мотивация:</b> признание, свобода, эмоции.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.
-                  </p>
+                  <p style={p1}><b>Мотивация:</b> признание, свобода, эмоции.</p>
+                  <p style={p1}><b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.</p>
                 </>
               }
             />
@@ -321,12 +320,8 @@ ${list(howToTalk)}
                     <li style={li}>эмпатия</li>
                     <li style={li}>умеет слушать</li>
                   </ul>
-                  <p style={p1}>
-                    <b>Мотивация:</b> гармония, безопасность, стабильность.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> конфликты, давление, резкие изменения.
-                  </p>
+                  <p style={p1}><b>Мотивация:</b> гармония, безопасность, стабильность.</p>
+                  <p style={p1}><b>Триггеры:</b> конфликты, давление, резкие изменения.</p>
                 </>
               }
             />
@@ -344,21 +339,15 @@ ${list(howToTalk)}
                     <li style={li}>структурность</li>
                     <li style={li}>высокий стандарт качества</li>
                   </ul>
-                  <p style={p1}>
-                    <b>Мотивация:</b> точность, факты, компетентность.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.
-                  </p>
+                  <p style={p1}><b>Мотивация:</b> точность, факты, компетентность.</p>
+                  <p style={p1}><b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.</p>
                 </>
               }
             />
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-            <SolidButton safeMode={safeMode} onClick={start}>
-              Начать тест
-            </SolidButton>
+            <SolidButton safeMode={safeMode} onClick={start}>Начать тест</SolidButton>
 
             {Object.keys(answers).length > 0 && (
               <SolidButton safeMode={safeMode} variant="ghost" onClick={() => setStage("test")}>
@@ -384,9 +373,7 @@ ${list(howToTalk)}
             </div>
           </div>
 
-          <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>
-            {q.text}
-          </div>
+          <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>{q.text}</div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 16 }}>
             <AnswerButton safeMode={safeMode} active={selected === 0} onClick={() => setAnswer(0)}>
@@ -407,8 +394,8 @@ ${list(howToTalk)}
             </AnswerButton>
           </div>
 
+          {/* ✅ ВОТ ЗДЕСЬ: кнопки управления теперь такими же solid как AnswerButton */}
           <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
-            {/* ✅ ВАЖНО: эти кнопки теперь тоже SOLID как ответы */}
             <SolidButton safeMode={safeMode} variant="ghost" onClick={reset}>
               Начать сначала
             </SolidButton>
@@ -422,17 +409,11 @@ ${list(howToTalk)}
               <SolidButton safeMode={safeMode} variant="ghost" disabled={!canNext} onClick={next}>
                 Вперёд
               </SolidButton>
-              {isComplete && (
-                <SolidButton safeMode={safeMode} onClick={finish}>
-                  Результат
-                </SolidButton>
-              )}
+              {isComplete && <SolidButton safeMode={safeMode} onClick={finish}>Результат</SolidButton>}
             </div>
           </div>
 
-          <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>
-            Совет: отвечай быстро, как чувствуешь.
-          </div>
+          <div style={{ marginTop: 10, opacity: 0.6, fontSize: 12 }}>Совет: отвечай быстро, как чувствуешь.</div>
         </GlassCard>
       )}
 
@@ -445,22 +426,18 @@ ${list(howToTalk)}
           <ScoreRow color="green" value={scores.green} safeMode={safeMode} />
           <ScoreRow color="blue" value={scores.blue} safeMode={safeMode} />
 
+          {/* ✅ Блок рекомендаций: в safeMode теперь полностью OPAQUE */}
           <div style={{ marginTop: 14 }}>
-            {/* ✅ ВАЖНО: рекомендации теперь тоже SOLID, чтобы не “выбеливалось” */}
             <GlassInset safeMode={safeMode}>
               <TopSummary ranked={ranked} />
             </GlassInset>
           </div>
 
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-            <SolidButton safeMode={safeMode} onClick={share}>
-              Поделиться (скопировать)
-            </SolidButton>
-
+            <SolidButton safeMode={safeMode} onClick={share}>Поделиться (скопировать)</SolidButton>
             <SolidButton safeMode={safeMode} variant="ghost" onClick={() => setStage("test")}>
               Вернуться к вопросам
             </SolidButton>
-
             <SolidButton safeMode={safeMode} variant="ghost" onClick={reset}>
               Пройти заново
             </SolidButton>
@@ -489,7 +466,7 @@ function AmbientBackground({ safeMode }: { safeMode: boolean }) {
         inset: 0,
         zIndex: -1,
         background: safeMode
-          ? "linear-gradient(180deg, #0B0F16 0%, #070A0F 100%)"
+          ? `linear-gradient(180deg, ${SAFE.pageBgTop} 0%, ${SAFE.pageBgBottom} 100%)`
           : "radial-gradient(900px 500px at 20% 10%, rgba(120,170,255,0.28), transparent 60%)," +
             "radial-gradient(900px 500px at 80% 20%, rgba(255,120,200,0.22), transparent 55%)," +
             "radial-gradient(900px 500px at 50% 90%, rgba(120,255,210,0.18), transparent 60%)," +
@@ -505,8 +482,8 @@ function GlassCard({ children, safeMode }: { children: React.ReactNode; safeMode
       style={{
         padding: 16,
         borderRadius: 22,
-        backgroundColor: safeMode ? "rgba(18,22,32,0.98)" : "rgba(255,255,255,0.08)",
-        border: "1px solid rgba(255,255,255,0.16)",
+        backgroundColor: safeMode ? SAFE.cardBg : "rgba(255,255,255,0.08)",
+        border: `1px solid ${SAFE.border}`,
         boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
         backdropFilter: safeMode ? "none" : "blur(18px) saturate(160%)",
         WebkitBackdropFilter: safeMode ? "none" : "blur(18px) saturate(160%)",
@@ -535,15 +512,14 @@ function GlassCard({ children, safeMode }: { children: React.ReactNode; safeMode
   );
 }
 
-/* ✅ FIX: рекомендации/инсет — solid в safeMode */
 function GlassInset({ children, safeMode }: { children: React.ReactNode; safeMode: boolean }) {
   return (
     <div
       style={{
         padding: 12,
         borderRadius: 18,
-        backgroundColor: safeMode ? "rgba(34,44,64,0.98)" : "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.12)",
+        backgroundColor: safeMode ? SAFE.insetBg : "rgba(255,255,255,0.06)",
+        border: `1px solid ${SAFE.border}`,
         backdropFilter: safeMode ? "none" : "blur(14px) saturate(140%)",
         WebkitBackdropFilter: safeMode ? "none" : "blur(14px) saturate(140%)",
         color: "rgba(255,255,255,0.92)",
@@ -554,7 +530,11 @@ function GlassInset({ children, safeMode }: { children: React.ReactNode; safeMod
   );
 }
 
-/* ✅ FIX: ВСЕ кнопки делаем solid как AnswerButton */
+/**
+ * ✅ ВАЖНО:
+ * ЭТА кнопка — “как AnswerButton”, solid, без blur.
+ * Её используем везде вместо стеклянных ghost-кнопок, которые белели.
+ */
 function SolidButton({
   children,
   onClick,
@@ -579,30 +559,40 @@ function SolidButton({
     WebkitTapHighlightColor: "transparent",
     appearance: "none",
     WebkitAppearance: "none",
-    border: "1px solid rgba(255,255,255,0.22)",
     backdropFilter: "none",
     WebkitBackdropFilter: "none",
   };
 
-  const style: React.CSSProperties =
-    variant === "solid"
-      ? {
+  if (variant === "solid") {
+    return (
+      <button
+        type="button"
+        style={{
           ...base,
           color: "rgba(10,12,16,0.95)",
           backgroundColor: "rgba(255,255,255,0.92)",
           border: "1px solid rgba(255,255,255,0.14)",
           boxShadow: "0 10px 26px rgba(0,0,0,0.25)",
-        }
-      : {
-          ...base,
-          color: "rgba(255,255,255,0.95)",
-          backgroundColor: safeMode ? "rgba(44,56,84,0.98)" : "rgba(255,255,255,0.12)",
-          border: safeMode ? "1px solid rgba(255,255,255,0.18)" : "1px solid rgba(255,255,255,0.22)",
-          boxShadow: "0 6px 16px rgba(0,0,0,0.18)",
-        };
+        }}
+        onClick={disabled ? undefined : onClick}
+      >
+        {children}
+      </button>
+    );
+  }
 
   return (
-    <button type="button" style={style} onClick={disabled ? undefined : onClick}>
+    <button
+      type="button"
+      style={{
+        ...base,
+        color: "rgba(255,255,255,0.95)",
+        backgroundColor: safeMode ? SAFE.ghostBtnBg : "rgba(255,255,255,0.12)",
+        border: `1px solid ${safeMode ? SAFE.border : "rgba(255,255,255,0.22)"}`,
+        boxShadow: "0 6px 16px rgba(0,0,0,0.18)",
+      }}
+      onClick={disabled ? undefined : onClick}
+    >
       {children}
     </button>
   );
@@ -621,8 +611,8 @@ function AnswerButton({
 }) {
   const bg = safeMode
     ? active
-      ? "rgba(64,76,104,0.98)"
-      : "rgba(42,50,70,0.98)"
+      ? SAFE.answerBgActive
+      : SAFE.answerBg
     : active
     ? "rgba(255,255,255,0.22)"
     : "rgba(255,255,255,0.12)";
@@ -660,7 +650,6 @@ function AnswerButton({
   );
 }
 
-/* ✅ FIX: disclosure тоже solid в safeMode */
 function GlassDisclosure({
   title,
   body,
@@ -676,8 +665,8 @@ function GlassDisclosure({
     <div
       style={{
         borderRadius: 16,
-        backgroundColor: safeMode ? "rgba(34,44,64,0.98)" : "rgba(0,0,0,0.18)",
-        border: "1px solid rgba(255,255,255,0.10)",
+        backgroundColor: safeMode ? SAFE.disclosureBg : "rgba(0,0,0,0.18)",
+        border: `1px solid ${SAFE.border}`,
         backdropFilter: safeMode ? "none" : "blur(10px)",
         WebkitBackdropFilter: safeMode ? "none" : "blur(10px)",
         overflow: "hidden",
@@ -753,15 +742,7 @@ function Header({ progress, safeMode }: { progress?: number; safeMode: boolean }
   );
 }
 
-function ScoreRow({
-  color,
-  value,
-  safeMode,
-}: {
-  color: Color;
-  value: number;
-  safeMode: boolean;
-}) {
+function ScoreRow({ color, value, safeMode }: { color: Color; value: number; safeMode: boolean }) {
   const max = 30;
   const pct = Math.round((value / max) * 100);
 
@@ -814,8 +795,14 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
       </div>
 
       <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-        <TipBlock title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`} items={t1.strengths} />
-        <TipBlock title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`} items={t2.strengths} />
+        <TipBlock
+          title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`}
+          items={t1.strengths}
+        />
+        <TipBlock
+          title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`}
+          items={t2.strengths}
+        />
         <TipBlock title="Триггеры" items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
         <TipBlock title="Как с тобой общаться" items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
       </div>
