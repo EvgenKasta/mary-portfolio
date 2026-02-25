@@ -2,6 +2,13 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
+type TgUser = {
+  id?: number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+};
+
 function verifyTelegramInitData(initData: string, botToken: string) {
   const urlParams = new URLSearchParams(initData);
   const hash = urlParams.get("hash");
@@ -14,34 +21,37 @@ function verifyTelegramInitData(initData: string, botToken: string) {
 
   const secretKey = crypto.createHash("sha256").update(botToken).digest();
 
-  const hmac = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
+  const hmac = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
 
   return !!hash && hmac === hash;
 }
 
-function parseUserFromInitData(initData: string) {
-  const params = new URLSearchParams(initData);
-  const userRaw = params.get("user");
-  if (!userRaw) return null;
+function parseUserFromInitData(initData: string): TgUser | null {
   try {
-    return JSON.parse(userRaw);
+    const params = new URLSearchParams(initData);
+    const userRaw = params.get("user");
+    if (!userRaw) return null;
+    return JSON.parse(userRaw) as TgUser;
   } catch {
     return null;
   }
 }
 
-function formatUserBlock(user: any) {
+function buildUserBlock(user: TgUser | null) {
   if (!user) return "";
 
-  const username = user?.username ? `@${user.username}` : "без username";
-  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+  const username = user.username ? `@${user.username}` : "—";
+  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ");
 
-  return `👤 Пользователь:
-ID: ${user?.id ?? "unknown"}
-Логин: ${username}
-Имя: ${fullName || "не указано"}
-
-`;
+  return (
+    `👤 Пользователь:\n` +
+    `ID: ${user.id ?? "—"}\n` +
+    `Логин: ${username}\n` +
+    `Имя: ${fullName || "—"}\n\n`
+  );
 }
 
 async function tgSendMessage(text: string) {
@@ -86,7 +96,7 @@ export async function POST(req: Request) {
       initData?: string;
       text?: string;
       secret?: string;
-      user?: { id?: number; username?: string; first_name?: string; last_name?: string } | null;
+      user?: TgUser; // <- добавили, но это НЕ ломает старых клиентов
     };
 
     const botToken = process.env.BOT_TOKEN || "";
@@ -95,7 +105,7 @@ export async function POST(req: Request) {
     const messageText = String(text || "").trim();
     if (!messageText) return new Response("Empty text", { status: 400 });
 
-    // ✅ Если initData есть — валидируем и берём user из initData
+    // 1) Если есть initData — валидируем и парсим user из initData
     if (initData && botToken) {
       const ok = verifyTelegramInitData(initData, botToken);
       if (!ok) {
@@ -103,15 +113,14 @@ export async function POST(req: Request) {
         return new Response("Bad initData", { status: 403 });
       }
 
-      const tgUser = parseUserFromInitData(initData);
-      const finalText = formatUserBlock(tgUser) + messageText;
-
+      const u = parseUserFromInitData(initData);
+      const finalText = buildUserBlock(u) + messageText;
       return await tgSendMessage(finalText);
     }
 
-    // ✅ Если initData нет — пускаем по секрету и берём user из body (который пришёл с клиента)
+    // 2) Если initData нет — пускаем по секрету и берём user из body (если пришёл)
     if (serverSecret && secret && secret === serverSecret) {
-      const finalText = formatUserBlock(user) + messageText;
+      const finalText = buildUserBlock(user || null) + messageText;
       return await tgSendMessage(finalText);
     }
 
@@ -120,7 +129,6 @@ export async function POST(req: Request) {
       hasSecret: !!secret,
       hasServerSecret: !!serverSecret,
     });
-
     return new Response("Unauthorized", { status: 403 });
   } catch (e: any) {
     console.error("notify-owner route error", e);
