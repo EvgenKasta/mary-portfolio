@@ -1,111 +1,122 @@
-import { NextResponse } from "next/server";
+import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
-type TgUpdate = {
-  update_id: number;
-  message?: {
-    message_id: number;
-    text?: string;
-    chat: { id: number };
-    from?: { id: number; username?: string; first_name?: string; last_name?: string };
-  };
-};
+/* ---------- verify initData ---------- */
 
-function getEnv(name: string) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
+function verifyTelegramInitData(initData: string, botToken: string) {
+  const urlParams = new URLSearchParams(initData);
+  const hash = urlParams.get("hash");
+  urlParams.delete("hash");
+
+  const dataCheckString = Array.from(urlParams.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("\n");
+
+  const secretKey = crypto.createHash("sha256").update(botToken).digest();
+
+  const hmac = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
+
+  return !!hash && hmac === hash;
 }
 
-async function tgCall(method: string, payload: any) {
-  const token = getEnv("BOT_TOKEN");
-  const url = `https://api.telegram.org/bot${token}/${method}`;
+/* ---------- parse user ---------- */
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+function parseUser(initData: string) {
+  const params = new URLSearchParams(initData);
+  const userRaw = params.get("user");
 
-  const data = await res.json().catch(() => null);
+  if (!userRaw) return null;
 
-  if (!res.ok || !data?.ok) {
-    console.error("Telegram API error:", { method, status: res.status, data });
+  try {
+    return JSON.parse(userRaw);
+  } catch {
+    return null;
   }
-
-  return { res, data };
 }
 
-function startKeyboard(appUrl: string) {
-  return {
-    inline_keyboard: [
-      [
-        {
-          text: "🚀 Начать тест",
-          web_app: { url: appUrl },
-        },
-      ],
-    ],
-  };
-}
+/* ---------- route ---------- */
 
 export async function POST(req: Request) {
-  let update: TgUpdate | null = null;
-
   try {
-    update = (await req.json()) as TgUpdate;
-  } catch {
-    return NextResponse.json({ ok: true });
-  }
+    const { initData, text } = (await req.json()) as {
+      initData?: string;
+      text?: string;
+    };
 
-  // Telegram будет долбить вебхук, нам важно отвечать 200 быстро
-  // поэтому: минимум логики + без падений
-  try {
-    const appUrl = getEnv("APP_URL"); // например https://mary-portfolio-xyz.vercel.app
-    const msg = update?.message;
-    const text = msg?.text || "";
-    const chatId = msg?.chat?.id;
+    const botToken = process.env.BOT_TOKEN || "";
+    const ownerChatId = process.env.OWNER_CHAT_ID || "";
 
-    if (!chatId) return NextResponse.json({ ok: true });
-
-    // /start (и /start payload)
-    if (text.startsWith("/start")) {
-      const caption =
-        "Привет! 👋\n\nЭто тест DISC Colors.\nНажми кнопку ниже — открою тест \n\nБолее 80% компаний из списка Fortune 500 применяют эту систему для анализа сотрудников ✅\n\n(Откроется в режиме WebApp)";
-
-      // Вариант 1: отправляем картинку по URL (лучший для Vercel)
-      // Поставь START_PHOTO_URL в env (например, картинка на CDN/telegra.ph/discord/любая https ссылка)
-      const photoUrl = process.env.START_PHOTO_URL;
-
-      if (photoUrl) {
-        await tgCall("sendPhoto", {
-          chat_id: chatId,
-          photo: photoUrl,
-          caption,
-          reply_markup: startKeyboard(appUrl),
-        });
-      } else {
-        // Вариант 2: если нет картинки — просто текст + кнопка
-        await tgCall("sendMessage", {
-          chat_id: chatId,
-          text: caption,
-          reply_markup: startKeyboard(appUrl),
-        });
-      }
-
-      return NextResponse.json({ ok: true });
+    if (!botToken || !ownerChatId) {
+      console.error("Missing env");
+      return new Response("Missing env", { status: 500 });
     }
 
-    // Можно игнорить остальные сообщения
-    return NextResponse.json({ ok: true });
-  } catch (e) {
-    console.error("bot webhook error:", e);
-    return NextResponse.json({ ok: true });
-  }
-}
+    if (!initData) {
+      return new Response("Missing initData", { status: 403 });
+    }
 
-// (не обязательно, но удобно) чтобы Telegram мог проверять GET
-export async function GET() {
-  return NextResponse.json({ ok: true, hint: "Telegram webhook endpoint. Use POST." });
+    if (!verifyTelegramInitData(initData, botToken)) {
+      return new Response("Bad initData", { status: 403 });
+    }
+
+    /* ---------- USER ---------- */
+
+    const user = parseUser(initData);
+
+    const username = user?.username
+      ? `@${user.username}`
+      : "без username";
+
+    const fullName = [
+      user?.first_name,
+      user?.last_name,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const userBlock = `
+👤 Пользователь:
+ID: ${user?.id || "unknown"}
+Логин: ${username}
+Имя: ${fullName || "не указано"}
+`;
+
+    /* ---------- FINAL TEXT ---------- */
+
+    const finalText = `${userBlock}
+
+${text || ""}`;
+
+    /* ---------- SEND ---------- */
+
+    const tgRes = await fetch(
+      `https://api.telegram.org/bot${botToken}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: ownerChatId,
+          text: finalText,
+          disable_web_page_preview: true,
+        }),
+      }
+    );
+
+    const tgBody = await tgRes.text();
+
+    if (!tgRes.ok) {
+      console.error("Telegram error", tgBody);
+      return new Response("Telegram API error", { status: 502 });
+    }
+
+    return Response.json({ ok: true });
+  } catch (e) {
+    console.error("notify-owner error", e);
+    return new Response("Server error", { status: 500 });
+  }
 }
