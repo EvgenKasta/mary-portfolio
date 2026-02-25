@@ -85,7 +85,10 @@ export default function TestApp() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers, index, stage }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ answers, index, stage })
+      );
     } catch {
       // ignore
     }
@@ -98,7 +101,10 @@ export default function TestApp() {
     return Math.round((answeredCount / MAX_Q) * 100);
   }, [answers]);
 
-  const isComplete = useMemo(() => Object.keys(answers).length >= MAX_Q, [answers]);
+  const isComplete = useMemo(
+    () => Object.keys(answers).length >= MAX_Q,
+    [answers]
+  );
 
   const canPrev = stage === "test" && index > 0;
   const canNext = stage === "test" && index < MAX_Q - 1;
@@ -452,7 +458,6 @@ function AmbientBackground({ safeMode }: { safeMode: boolean }) {
         position: "fixed",
         inset: 0,
         zIndex: -1,
-        // ✅ в safeMode делаем фон проще и темнее (меньше шансов “выбеливания”)
         background: safeMode
           ? "linear-gradient(180deg, #0B0F16 0%, #070A0F 100%)"
           : "radial-gradient(900px 500px at 20% 10%, rgba(120,170,255,0.28), transparent 60%)," +
@@ -465,7 +470,6 @@ function AmbientBackground({ safeMode }: { safeMode: boolean }) {
 }
 
 function GlassCard({ children, safeMode }: { children: React.ReactNode; safeMode: boolean }) {
-  // ✅ SafeMode: никаких blend/backdrop/полупрозрачных “стекол”, только solid
   const cardBg = safeMode ? "rgba(18,22,32,0.98)" : "rgba(255,255,255,0.08)";
   const blur = safeMode ? "none" : "blur(18px) saturate(160%)";
 
@@ -481,10 +485,9 @@ function GlassCard({ children, safeMode }: { children: React.ReactNode; safeMode
         WebkitBackdropFilter: blur,
         position: "relative",
         overflow: "hidden",
-        color: "rgba(255,255,255,0.92)", // ✅ фикс контраста внутри
+        color: "rgba(255,255,255,0.92)",
       }}
     >
-      {/* ❌ ВАЖНО: overlay-слой полностью убираем в safeMode */}
       {!safeMode && (
         <div
           aria-hidden
@@ -518,7 +521,7 @@ function GlassInset({ children, safeMode }: { children: React.ReactNode; safeMod
         border: "1px solid rgba(255,255,255,0.12)",
         backdropFilter: blur,
         WebkitBackdropFilter: blur,
-        color: "rgba(255,255,255,0.92)", // ✅ фикс контраста
+        color: "rgba(255,255,255,0.92)",
       }}
     >
       {children}
@@ -544,7 +547,7 @@ function GlassButton({
     padding: "12px 14px",
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.45 : 1,
-    fontWeight: 700,
+    fontWeight: 800,
     letterSpacing: 0.2,
     transition: "transform 0.08s ease, filter 0.08s ease",
     whiteSpace: "nowrap",
@@ -566,8 +569,8 @@ function GlassButton({
         }
       : {
           ...base,
-          // ✅ SafeMode: ghost делаем темным solid, без прозрачной “стекляшки”
           color: "rgba(255,255,255,0.92)",
+          // ✅ safeMode: делаем ghost НЕ белым, а темным solid
           backgroundColor: safeMode ? "rgba(36,44,62,0.98)" : "rgba(255,255,255,0.06)",
           borderColor: "rgba(255,255,255,0.14)",
           backdropFilter: safeMode ? "none" : "blur(14px) saturate(140%)",
@@ -609,7 +612,6 @@ function AnswerButton({
   active: boolean;
   safeMode: boolean;
 }) {
-  // ✅ SafeMode: только solid, без альфы 0.12, чтобы не “выбеливалось”
   const bg = safeMode
     ? active
       ? "rgba(64,76,104,0.98)"
@@ -642,7 +644,6 @@ function AnswerButton({
         WebkitTapHighlightColor: "transparent",
         appearance: "none",
         WebkitAppearance: "none",
-        // ❌ никакого blur
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
       }}
@@ -809,7 +810,9 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
 function TipBlock({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
-      <div style={{ fontSize: 13, opacity: 0.85, fontWeight: 800, color: "rgba(255,255,255,0.9)" }}>{title}</div>
+      <div style={{ fontSize: 13, opacity: 0.85, fontWeight: 800, color: "rgba(255,255,255,0.9)" }}>
+        {title}
+      </div>
       <ul style={{ margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, color: "rgba(255,255,255,0.9)" }}>
         {items.map((x) => (
           <li key={x} style={{ marginTop: 4 }}>
