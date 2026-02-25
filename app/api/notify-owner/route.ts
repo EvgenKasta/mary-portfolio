@@ -2,7 +2,14 @@ import crypto from "node:crypto";
 
 export const runtime = "nodejs";
 
-/* ---------- verify initData ---------- */
+type TgUser = {
+  id?: number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  language_code?: string;
+};
+
 function verifyTelegramInitData(initData: string, botToken: string) {
   const urlParams = new URLSearchParams(initData);
   const hash = urlParams.get("hash");
@@ -14,13 +21,13 @@ function verifyTelegramInitData(initData: string, botToken: string) {
     .join("\n");
 
   const secretKey = crypto.createHash("sha256").update(botToken).digest();
+
   const hmac = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
 
   return !!hash && hmac === hash;
 }
 
-/* ---------- parse user from initData ---------- */
-function parseUserFromInitData(initData: string) {
+function parseUserFromInitData(initData: string): TgUser | null {
   try {
     const params = new URLSearchParams(initData);
     const userRaw = params.get("user");
@@ -31,23 +38,24 @@ function parseUserFromInitData(initData: string) {
   }
 }
 
-/* ---------- format user block ---------- */
-function formatUserBlock(user: any) {
-  if (!user || typeof user !== "object") return "";
+function buildUserBlock(user: TgUser | null) {
+  if (!user) {
+    return `👤 Пользователь:
+ID: unknown
+Логин: без username
+Имя: не указано`;
+  }
 
-  const id = user.id ?? "unknown";
   const username = user.username ? `@${user.username}` : "без username";
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || "не указано";
+  const id = user.id ?? "unknown";
 
   return `👤 Пользователь:
 ID: ${id}
 Логин: ${username}
-Имя: ${fullName}
-
-`;
+Имя: ${fullName}`;
 }
 
-/* ---------- Telegram sendMessage ---------- */
 async function tgSendMessage(text: string) {
   const botToken = process.env.BOT_TOKEN || "";
   const ownerChatId = process.env.OWNER_CHAT_ID || "";
@@ -57,75 +65,78 @@ async function tgSendMessage(text: string) {
     return new Response("Missing env", { status: 500 });
   }
 
+  const payload = {
+    chat_id: ownerChatId,
+    text,
+    disable_web_page_preview: true,
+  };
+
   const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: ownerChatId,
-      text,
-      disable_web_page_preview: true,
-    }),
+    body: JSON.stringify(payload),
   });
 
-  const bodyText = await tgRes.text();
+  const tgBodyText = await tgRes.text();
+
   if (!tgRes.ok) {
-    console.error("Telegram sendMessage failed", { status: tgRes.status, body: bodyText });
+    console.error("Telegram sendMessage failed", { status: tgRes.status, body: tgBodyText });
     return new Response("Telegram API error", { status: 502 });
   }
 
   return Response.json({ ok: true });
 }
 
-/* ---------- route ---------- */
 export async function POST(req: Request) {
   try {
-    const { initData, text, secret, user } = (await req.json()) as {
+    const body = (await req.json()) as {
       initData?: string;
+      user?: TgUser | null;
       text?: string;
       secret?: string;
-      user?: any; // tg.initDataUnsafe.user
     };
-
-    const messageText = String(text || "").trim();
-    if (!messageText) return new Response("Empty text", { status: 400 });
 
     const botToken = process.env.BOT_TOKEN || "";
     const serverSecret = process.env.NOTIFY_SECRET || "";
 
-    // ✅ Авторизация: сначала пробуем initData, если он есть и валиден
-    let authorized = false;
+    const messageText = String(body.text || "").trim();
+    if (!messageText) return new Response("Empty text", { status: 400 });
 
+    const initData = String(body.initData || "").trim();
+    const bodyUser = body.user ?? null;
+
+    // 1) Пытаемся авторизоваться через initData (самый правильный путь)
     if (initData && botToken) {
       const ok = verifyTelegramInitData(initData, botToken);
-      if (ok) authorized = true;
-      else console.error("Bad initData (will try secret fallback)");
+      if (ok) {
+        const initUser = parseUserFromInitData(initData);
+        const user = bodyUser || initUser;
+
+        const finalText = `${buildUserBlock(user)}\n\n${messageText}`;
+        return await tgSendMessage(finalText);
+      }
+
+      console.error("Bad initData (hash mismatch)");
+      // не возвращаем сразу 403 — даём шанс пройти через secret
     }
 
-    // ✅ Фолбэк: если initData нет/битый — пускаем по секрету (как у тебя было)
-    if (!authorized && serverSecret && secret && secret === serverSecret) {
-      authorized = true;
+    // 2) Фолбэк через секрет (если initData пустой/битый)
+    if (serverSecret && body.secret && body.secret === serverSecret) {
+      const finalText = `${buildUserBlock(bodyUser)}\n\n${messageText}`;
+      return await tgSendMessage(finalText);
     }
 
-    if (!authorized) {
-      console.error("Unauthorized notify", {
-        hasInitData: !!initData,
-        hasSecret: !!secret,
-        hasServerSecret: !!serverSecret,
-      });
-      return new Response("Unauthorized", { status: 403 });
-    }
+    console.error("Unauthorized notify-owner", {
+      hasInitData: !!initData,
+      hasBotToken: !!botToken,
+      hasServerSecret: !!serverSecret,
+      hasSecret: !!body.secret,
+      hasUser: !!bodyUser,
+    });
 
-    // ✅ Пользователь: приоритет body.user (initDataUnsafe.user), потом initData
-    const parsedUser = user ?? (initData ? parseUserFromInitData(initData) : null);
-    const userBlock = formatUserBlock(parsedUser);
-
-    return await tgSendMessage(userBlock + messageText);
+    return new Response("Unauthorized", { status: 403 });
   } catch (e: any) {
     console.error("notify-owner route error", e);
     return new Response("Server error", { status: 500 });
   }
-}
-
-export async function GET() {
-  return Response.json({ ok: true, hint: "notify-owner endpoint. Use POST." });
 }
