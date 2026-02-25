@@ -203,15 +203,18 @@ ${list(howToTalk)}
   }
 
   const shellStyle: React.CSSProperties = {
-    maxWidth: 720,
-    margin: "0 auto",
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingBottom: 22,
-    paddingTop: "max(calc(env(safe-area-inset-top) + 44px), 84px)",
-    color: "rgba(255,255,255,0.95)", // ✅ фикс контраста везде
-    WebkitTextSizeAdjust: "100%",
-  };
+  maxWidth: 720,
+  margin: "0 auto",
+  paddingLeft: 16,
+  paddingRight: 16,
+  paddingBottom: 22,
+
+  // ⬇️ добавили больше воздуха сверху
+  paddingTop: "calc(env(safe-area-inset-top) + 100px)",
+
+  color: "rgba(255,255,255,0.95)",
+  WebkitTextSizeAdjust: "100%",
+};
 
   return (
     <div style={shellStyle}>
