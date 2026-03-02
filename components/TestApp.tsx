@@ -282,26 +282,42 @@ function profileTitle(
       subtitle: "Результат + система",
       desc:
         "Ты про победу и контроль результата, но опираешься на логику, факты и структуру. Сильный управленец: ставишь цель, строишь систему, требуешь качество.",
-      resource: ["жёсткая ясность целей", "аналитика и контроль качества", "решительность"],
+      resource: [
+        "жёсткая ясность целей",
+        "аналитика и контроль качества",
+        "решительность",
+      ],
       decisions: [
         "быстро, но по данным",
         "любишь критерии и метрики",
         "не терпишь хаос и «водичку»",
       ],
-      role: ["управленец / руководитель", "стратегия и планирование", "переговоры и контроль"],
+      role: [
+        "управленец / руководитель",
+        "стратегия и планирование",
+        "переговоры и контроль",
+      ],
     },
     "blue+red": {
       title: "🔵🔴 Стратег-Лидер",
       subtitle: "Сначала логика, потом действие",
       desc:
         "Ты думаешь системно и глубоко, а затем включаешь напор. Умеешь принимать жёсткие решения, но хочешь понимать причинно-следственные связи.",
-      resource: ["системное мышление", "качество и стандарты", "воля к результату"],
+      resource: [
+        "системное мышление",
+        "качество и стандарты",
+        "воля к результату",
+      ],
       decisions: [
         "через анализ → план → действие",
         "нужны факты и критерии",
         "лучше работает дедлайн, чтобы не «дополировать»",
       ],
-      role: ["продукт / аналитика / финансы", "управление через систему", "архитектор процессов"],
+      role: [
+        "продукт / аналитика / финансы",
+        "управление через систему",
+        "архитектор процессов",
+      ],
     },
 
     "red+green": {
@@ -413,15 +429,26 @@ function profileTitle(
     },
   };
 
-  // если вдруг комбинация не попала (на будущее)
   const fallback = {
     title: `${colorEmoji(top1)}${colorEmoji(top2)} Профиль`,
     subtitle: "Твой стиль поведения и коммуникации",
     desc:
       "Это сочетание сильных сторон двух ведущих цветов. Первый — как ты действуешь чаще всего, второй — как ты дополняешь себя в коммуникации и решениях.",
-    resource: ["сильные стороны двух ведущих цветов", "гибкость в поведении", "адаптация к ситуациям"],
-    decisions: ["ориентируешься на ведущий цвет", "второй цвет помогает балансировать", "лучше работают ясные договорённости"],
-    role: ["комбинация ролей двух цветов", "влияние зависит от контекста", "сильнее всего там, где есть ясные правила игры"],
+    resource: [
+      "сильные стороны двух ведущих цветов",
+      "гибкость в поведении",
+      "адаптация к ситуациям",
+    ],
+    decisions: [
+      "ориентируешься на ведущий цвет",
+      "второй цвет помогает балансировать",
+      "лучше работают ясные договорённости",
+    ],
+    role: [
+      "комбинация ролей двух цветов",
+      "влияние зависит от контекста",
+      "сильнее всего там, где есть ясные правила игры",
+    ],
   };
 
   return pack[key] || fallback;
@@ -637,28 +664,31 @@ export default function TestApp() {
       ? "\n✅ Полный отчёт: ОПЛАЧЕНО ⭐\n"
       : "\n⚠️ Полный отчёт: НЕ ОПЛАЧЕН ⭐\n";
 
-    // ✅ NEW: добавили четкий профиль в текст отчёта (и для бота тоже)
     const p = profileTitle(top1.color, top2.color);
-    const profileBlock = `\nПрофиль (коротко):\n${p.title}\n${p.subtitle}\n${p.desc}\n`;
 
-    return `${userBlock}Мой профиль DISC:
-${colorEmoji(top1.color)} ${colorLabel(top1.color)} — ${top1.value}
-${colorEmoji(top2.color)} ${colorLabel(top2.color)} — ${top2.value}
+    // ✅ без цифр + без «Мой профиль DISC» и «Все результаты»
+    return `${userBlock}Твой профиль:
+${p.title}
+${p.subtitle}
 
-Все результаты:
-🔴 Красный: ${scores.red}/30
-🟡 Жёлтый: ${scores.yellow}/30
-🟢 Зелёный: ${scores.green}/30
-🔵 Синий: ${scores.blue}/30
-${profileBlock}
+${p.desc}
+
+Ведущие стили:
+${colorEmoji(top1.color)} ${colorLabel(top1.color)}
+${colorEmoji(top2.color)} ${colorLabel(top2.color)}
+
 ${paidMark}
-Пояснение результата:
+💎 Твой главный ресурс:
+${list(p.resource)}
 
-${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны:
-${list(t1.strengths)}
+🧠 Как ты принимаешь решения:
+${list(p.decisions)}
 
-${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны:
-${list(t2.strengths)}
+🤝 Твоя роль в команде:
+${list(p.role)}
+
+Сильные стороны:
+${list([...t1.strengths, ...t2.strengths].slice(0, 8))}
 
 Триггеры:
 ${list(triggers)}
@@ -1087,13 +1117,8 @@ ${list(howToTalk)}${extra}
       {stage === "result" && (
         <GlassCard>
           <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>
-            Результат
+            Твой профиль
           </h2>
-
-          <ScoreRow color="red" value={scores.red} />
-          <ScoreRow color="yellow" value={scores.yellow} />
-          <ScoreRow color="green" value={scores.green} />
-          <ScoreRow color="blue" value={scores.blue} />
 
           <div style={{ marginTop: 14 }}>
             <GlassInset>
@@ -1101,7 +1126,7 @@ ${list(howToTalk)}${extra}
             </GlassInset>
           </div>
 
-          {/* ✅ NEW: кнопка оплаты полного отчёта */}
+          {/* ✅ кнопка оплаты полного отчёта */}
           {!paidFull && (
             <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
               <GlassButton onClick={payStarsAndUnlock} disabled={paying}>
@@ -1380,50 +1405,6 @@ function Header({ progress }: { progress?: number }) {
             height: "100%",
             borderRadius: 999,
             backgroundColor: "rgba(255,255,255,0.75)",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ScoreRow({ color, value }: { color: Color; value: number }) {
-  const max = 30;
-  const pct = Math.round((value / max) * 100);
-
-  return (
-    <div style={{ marginTop: 10 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-        }}
-      >
-        <div style={{ fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
-          {colorEmoji(color)} {colorLabel(color)}
-        </div>
-        <div style={{ opacity: 0.8, color: "rgba(255,255,255,0.88)" }}>
-          {value} / {max}
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: 6,
-          height: 10,
-          borderRadius: 999,
-          backgroundColor: "rgba(255,255,255,0.12)",
-          border: "1px solid rgba(255,255,255,0.10)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            width: `${pct}%`,
-            height: "100%",
-            borderRadius: 999,
-            backgroundColor: "rgba(255,255,255,0.62)",
           }}
         />
       </div>
