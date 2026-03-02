@@ -1,22 +1,92 @@
+// app/api/create-invoice/route.ts  (или src/app/api/create-invoice/route.ts)
+import { NextResponse } from "next/server";
+import crypto from "crypto";
+
 export const runtime = "nodejs";
 
-export async function POST() {
-  try {
-    const botToken = process.env.BOT_TOKEN || "";
+function parseInitData(initData: string) {
+  const params = new URLSearchParams(initData);
+  const obj: Record<string, string> = {};
+  params.forEach((v, k) => (obj[k] = v));
+  return obj;
+}
 
+function verifyTelegramWebAppInitData(initData: string, botToken: string) {
+  const params = new URLSearchParams(initData);
+  const hash = params.get("hash");
+  if (!hash) return { ok: false, reason: "initData has no hash" };
+
+  params.delete("hash");
+
+  const dataCheckString = Array.from(params.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("\n");
+
+  const secretKey = crypto
+    .createHmac("sha256", "WebAppData")
+    .update(botToken)
+    .digest();
+
+  const computedHash = crypto
+    .createHmac("sha256", secretKey)
+    .update(dataCheckString)
+    .digest("hex");
+
+  if (computedHash !== hash) {
+    return { ok: false, reason: "hash mismatch" };
+  }
+  return { ok: true as const };
+}
+
+export async function POST(req: Request) {
+  try {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN || "";
     if (!botToken) {
-      return Response.json(
-        { ok: false, error: "Missing BOT_TOKEN env" },
+      return NextResponse.json(
+        { error: "Missing env TELEGRAM_BOT_TOKEN" },
         { status: 500 }
       );
     }
 
-    const STARS_AMOUNT = 49; // ⭐ цена в звёздах
-    const payload = `full_report_${Date.now()}_${Math.random()
-      .toString(16)
-      .slice(2)}`;
+    const body = (await req.json().catch(() => null)) as
+      | { initData?: string }
+      | null;
 
-    const tgRes = await fetch(
+    const initData = (body?.initData || "").trim();
+    if (!initData) {
+      return NextResponse.json(
+        { error: "Missing initData in body" },
+        { status: 400 }
+      );
+    }
+
+    const check = verifyTelegramWebAppInitData(initData, botToken);
+    if (!check.ok) {
+      return NextResponse.json(
+        { error: "Bad initData", reason: check.reason },
+        { status: 401 }
+      );
+    }
+
+    const initObj = parseInitData(initData);
+
+    let userId: number | null = null;
+    if (initObj.user) {
+      try {
+        const u = JSON.parse(initObj.user) as { id?: number };
+        if (u?.id) userId = u.id;
+      } catch {
+        // ignore
+      }
+    }
+
+    const stars = Number(process.env.FULL_REPORT_PRICE_STARS || "49");
+    const amount = Number.isFinite(stars) && stars > 0 ? Math.floor(stars) : 49;
+
+    const payload = `full_report_${userId ?? "unknown"}_${Date.now()}`;
+
+    const telegramRes = await fetch(
       `https://api.telegram.org/bot${botToken}/createInvoiceLink`,
       {
         method: "POST",
@@ -24,57 +94,32 @@ export async function POST() {
         body: JSON.stringify({
           title: "Полный отчёт DISC",
           description:
-            "Откроет разделы: Отношения, Алкоголь, Работа, Бизнес, Сексуальная жизнь.",
+            "Открывает разделы: Отношения, Алкоголь, Работа, Бизнес, Сексуальная жизнь.",
           payload,
-          provider_token: "", // ✅ для Stars — пусто
-          currency: "XTR", // ✅ Stars
-          prices: [{ label: "Полный отчёт", amount: STARS_AMOUNT }],
+          currency: "XTR",
+          prices: [{ label: "Полный отчёт", amount }],
+          provider_token: "",
         }),
       }
     );
 
-    const raw = await tgRes.text();
+    const telegramJson = await telegramRes.json().catch(() => null);
 
-    // Пытаемся распарсить что вернул Telegram
-    let tgJson: any = null;
-    try {
-      tgJson = JSON.parse(raw);
-    } catch {
-      tgJson = null;
-    }
-
-    if (!tgRes.ok) {
-      console.error("Telegram createInvoiceLink HTTP error:", tgRes.status, raw);
-      return Response.json(
+    if (!telegramRes.ok || !telegramJson?.ok) {
+      return NextResponse.json(
         {
-          ok: false,
-          where: "telegram_http",
-          status: tgRes.status,
-          telegram_raw: raw,
-          telegram_json: tgJson,
+          error: "Telegram createInvoiceLink failed",
+          telegram_status: telegramRes.status,
+          telegram_json: telegramJson,
         },
-        { status: 502 }
+        { status: 500 }
       );
     }
 
-    if (!tgJson?.ok || !tgJson?.result) {
-      console.error("Telegram createInvoiceLink bad payload:", raw);
-      return Response.json(
-        {
-          ok: false,
-          where: "telegram_payload",
-          telegram_raw: raw,
-          telegram_json: tgJson,
-        },
-        { status: 502 }
-      );
-    }
-
-    return Response.json({ ok: true, invoiceLink: tgJson.result });
+    return NextResponse.json({ invoiceLink: telegramJson.result as string });
   } catch (e: any) {
-    console.error("create-invoice route crash:", e);
-    return Response.json(
-      { ok: false, error: "Server error", details: String(e?.message || e) },
+    return NextResponse.json(
+      { error: "Internal error", message: String(e?.message || e) },
       { status: 500 }
     );
   }
