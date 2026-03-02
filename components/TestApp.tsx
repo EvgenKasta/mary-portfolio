@@ -45,7 +45,7 @@ ID: ${user.id}
 `;
 }
 
-/* ===================== NEW: Отношения + Алкоголь ===================== */
+/* ===================== NEW: Отношения + Алкоголь + Работа + Бизнес ===================== */
 
 function relationTips(color: Color): string[] {
   switch (color) {
@@ -109,13 +109,87 @@ function alcoholTips(color: Color): string[] {
   }
 }
 
-function formatExtraBlocksForReport(top1: { color: Color }, top2: { color: Color }) {
+function workTips(color: Color): string[] {
+  switch (color) {
+    case "red":
+      return [
+        "берёт ответственность и быстро принимает решения",
+        "любит цели, KPI и влияние на результат",
+        "может быть резким — спасают правила коммуникации",
+        "лучше раскрывается там, где есть скорость и конкуренция",
+      ];
+    case "yellow":
+      return [
+        "тащит коммуникацию, креатив и атмосферу",
+        "вдохновляет, продаёт идею, легко знакомится",
+        "хуже с рутиной — помогают дедлайны и короткие задачи",
+        "работает через интерес/признание/новизну",
+      ];
+    case "green":
+      return [
+        "надёжный командный игрок, держит стабильность процессов",
+        "силён в поддержке, сервисе, координации и «дожиме»",
+        "не любит конфликты — важна спокойная среда",
+        "раскрывается в долгих проектах и устойчивых командах",
+      ];
+    case "blue":
+      return [
+        "аналитика, качество, системность, стандарты",
+        "любит данные и чёткие критерии",
+        "может тормозить из-за перфекционизма — нужны рамки по времени",
+        "силён в экспертных и сложных задачах",
+      ];
+  }
+}
+
+function businessTips(color: Color): string[] {
+  switch (color) {
+    case "red":
+      return [
+        "силён в масштабировании, переговорах и жёстких решениях",
+        "идёт в риск, если видит награду",
+        "важно не «ломать» людей — нужна культура и правила",
+        "лучше всего в росте и конкурентной среде",
+      ];
+    case "yellow":
+      return [
+        "силён в маркетинге, бренде и продажах через эмоции",
+        "генерит направления и быстро тестирует гипотезы",
+        "может распыляться — помогает операционный контур/партнёр",
+        "лучше всего в публичности, комьюнити и инфоповодах",
+      ];
+    case "green":
+      return [
+        "силён в удержании клиентов, сервисе и доверии",
+        "строит стабильный бизнес через повторные продажи",
+        "может избегать резких шагов — помогает драйвер рядом",
+        "силён в процессах и заботе о команде",
+      ];
+    case "blue":
+      return [
+        "силён в продукте, финансах и юнит-экономике",
+        "строит систему, метрики и контроль качества",
+        "может долго готовиться — нужны дедлайны и MVP",
+        "лучше всего в нишах, где важны стандарты и экспертность",
+      ];
+  }
+}
+
+function formatExtraBlocksForReport(
+  top1: { color: Color },
+  top2: { color: Color }
+) {
   const list = (items: string[]) => items.map((x) => `• ${x}`).join("\n");
 
   const rel1 = relationTips(top1.color);
   const rel2 = relationTips(top2.color);
   const alc1 = alcoholTips(top1.color);
   const alc2 = alcoholTips(top2.color);
+
+  const w1 = workTips(top1.color);
+  const w2 = workTips(top2.color);
+  const b1 = businessTips(top1.color);
+  const b2 = businessTips(top2.color);
 
   return `
 
@@ -134,6 +208,22 @@ ${list(alc1)}
 
 ${colorEmoji(top2.color)} ${colorLabel(top2.color)}:
 ${list(alc2)}
+
+💼 Работа:
+
+${colorEmoji(top1.color)} ${colorLabel(top1.color)}:
+${list(w1)}
+
+${colorEmoji(top2.color)} ${colorLabel(top2.color)}:
+${list(w2)}
+
+📈 Бизнес:
+
+${colorEmoji(top1.color)} ${colorLabel(top1.color)}:
+${list(b1)}
+
+${colorEmoji(top2.color)} ${colorLabel(top2.color)}:
+${list(b2)}
 `;
 }
 
@@ -237,7 +327,7 @@ export default function TestApp() {
     }
   }
 
-  // ✅ Отчёт теперь начинается с блока пользователя (если он есть) + добавлены Отношения/Алкоголь
+  // ✅ Отчёт теперь начинается с блока пользователя + добавлены Отношения/Алкоголь/Работа/Бизнес
   function shareText() {
     const top1 = ranked[0];
     const top2 = ranked[1];
@@ -386,7 +476,14 @@ ${list(howToTalk)}${extra}
             0 (не про меня) … 3 (точно про меня).
           </p>
 
-          <div style={{ marginTop: 14, display: "grid", gap: 10, fontSize: 14 }}>
+          <div
+            style={{
+              marginTop: 14,
+              display: "grid",
+              gap: 10,
+              fontSize: 14,
+            }}
+          >
             <GlassDisclosure
               title="🔴 Красный — результат, скорость, лидерство"
               body={
@@ -427,7 +524,8 @@ ${list(howToTalk)}${extra}
                     <b>Мотивация:</b> признание, свобода, эмоции.
                   </p>
                   <p style={p1}>
-                    <b>Триггеры:</b> рутина, жёсткие рамки, критика без поддержки.
+                    <b>Триггеры:</b> рутина, жёсткие рамки, критика без
+                    поддержки.
                   </p>
                 </>
               }
@@ -473,7 +571,8 @@ ${list(howToTalk)}${extra}
                     <b>Мотивация:</b> точность, факты, компетентность.
                   </p>
                   <p style={p1}>
-                    <b>Триггеры:</b> хаос, поверхностность, эмоциональное давление.
+                    <b>Триггеры:</b> хаос, поверхностность, эмоциональное
+                    давление.
                   </p>
                 </>
               }
@@ -484,12 +583,15 @@ ${list(howToTalk)}${extra}
             <GlassButton onClick={start}>Начать тест</GlassButton>
 
             {Object.keys(answers).length > 0 && (
-              <GlassButton onClick={() => setStage("test")}>Продолжить</GlassButton>
+              <GlassButton onClick={() => setStage("test")}>
+                Продолжить
+              </GlassButton>
             )}
           </div>
 
           <div style={{ marginTop: 12, opacity: 0.65, fontSize: 12 }}>
-            * Упрощённая модель (DISC-подобная). Результат — подсказка, не диагноз.
+            * Упрощённая модель (DISC-подобная). Результат — подсказка, не
+            диагноз.
           </div>
         </GlassCard>
       )}
@@ -889,6 +991,12 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
   const a1 = alcoholTips(top1.color);
   const a2 = alcoholTips(top2.color);
 
+  const w1 = workTips(top1.color);
+  const w2 = workTips(top2.color);
+
+  const b1 = businessTips(top1.color);
+  const b2 = businessTips(top2.color);
+
   return (
     <div>
       <div style={{ fontSize: 16, fontWeight: 900, color: "rgba(255,255,255,0.95)" }}>
@@ -913,6 +1021,12 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
 
         <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={a1} />
         <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={a2} />
+
+        <TipBlock title={`💼 Работа — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={w1} />
+        <TipBlock title={`💼 Работа — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={w2} />
+
+        <TipBlock title={`📈 Бизнес — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={b1} />
+        <TipBlock title={`📈 Бизнес — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={b2} />
       </div>
     </div>
   );
