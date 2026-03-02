@@ -474,6 +474,26 @@ ${list(howToTalk)}${extra}
     }
   }
 
+  // ✅ NEW: отправка отчёта пользователю в личку бота
+  async function sendReportToUser(full: boolean) {
+    try {
+      if (!tgUser?.id) return;
+
+      const text = shareText(full);
+
+      await fetch("/api/send-user-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chatId: tgUser.id,
+          text,
+        }),
+      });
+    } catch {
+      // ignore
+    }
+  }
+
   // ✅ NEW: оплата Stars и после оплаты — отправляем полный отчёт
   async function payStarsAndUnlock() {
     try {
@@ -529,6 +549,7 @@ ${list(howToTalk)}${extra}
           if (status === "paid") {
             setPaidFull(true);
             await notifyOwner(true);
+            await sendReportToUser(true);
           }
         });
         return;
@@ -561,9 +582,9 @@ ${list(howToTalk)}${extra}
     } else {
       setStage("result");
 
-      // ✅ отправляем базовый отчёт сразу (без платных блоков),
-      // а полный уйдёт после оплаты.
+      // ✅ базовый отчёт сразу (без платных блоков) — OWNER + ПОЛЬЗОВАТЕЛЮ
       void notifyOwner(false);
+      void sendReportToUser(false);
     }
   }
 
@@ -579,7 +600,10 @@ ${list(howToTalk)}${extra}
 
   function finish() {
     setStage("result");
-    if (isComplete) void notifyOwner(false);
+    if (isComplete) {
+      void notifyOwner(false);
+      void sendReportToUser(false);
+    }
   }
 
   async function share() {
