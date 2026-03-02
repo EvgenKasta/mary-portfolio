@@ -81,8 +81,8 @@ export async function POST(req: Request) {
       }
     }
 
-    const stars = Number(process.env.FULL_REPORT_PRICE_STARS || "49");
-    const amount = Number.isFinite(stars) && stars > 0 ? Math.floor(stars) : 49;
+    const stars = Number(process.env.FULL_REPORT_PRICE_STARS || "99");
+    const amount = Number.isFinite(stars) && stars > 0 ? Math.floor(stars) : 99;
 
     const payload = `full_report_${userId ?? "unknown"}_${Date.now()}`;
 
