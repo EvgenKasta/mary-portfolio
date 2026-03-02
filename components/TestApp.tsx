@@ -45,7 +45,7 @@ ID: ${user.id}
 `;
 }
 
-/* ===================== NEW: Отношения + Алкоголь + Работа + Бизнес ===================== */
+/* ===================== NEW: Отношения + Алкоголь + Работа + Бизнес + Секс ===================== */
 
 function relationTips(color: Color): string[] {
   switch (color) {
@@ -175,6 +175,40 @@ function businessTips(color: Color): string[] {
   }
 }
 
+/* ✅ NEW: Сексуальная жизнь (без жести, 18+ не нужно) */
+function sexTips(color: Color): string[] {
+  switch (color) {
+    case "red":
+      return [
+        "инициативный и прямой: любит скорость и понятные сигналы",
+        "важны страсть, драйв и ощущение «я нужен/нужна»",
+        "может доминировать — спасают договорённости и обратная связь",
+        "лучше всего: динамика + уважение к границам",
+      ];
+    case "yellow":
+      return [
+        "про игру, флирт, эмоции и атмосферу",
+        "важна новизна и внимание к нему/ней",
+        "может загораться быстро — помогает разнообразие и легкость",
+        "лучше всего: юмор + инициативность + комплименты",
+      ];
+    case "green":
+      return [
+        "про нежность, заботу и безопасность",
+        "важны доверие, тактильность и стабильная близость",
+        "плохо переносит грубость и холод",
+        "лучше всего: мягкость + «я рядом» + предсказуемость",
+      ];
+    case "blue":
+      return [
+        "про качество и комфорт: нужно время «разогнаться»",
+        "важны уважение, границы и чистая коммуникация",
+        "может быть сдержанным — раскрывается через доверие",
+        "лучше всего: спокойный темп + понятные желания + безопасная атмосфера",
+      ];
+  }
+}
+
 function formatExtraBlocksForReport(
   top1: { color: Color },
   top2: { color: Color }
@@ -190,6 +224,9 @@ function formatExtraBlocksForReport(
   const w2 = workTips(top2.color);
   const b1 = businessTips(top1.color);
   const b2 = businessTips(top2.color);
+
+  const s1 = sexTips(top1.color);
+  const s2 = sexTips(top2.color);
 
   return `
 
@@ -224,6 +261,14 @@ ${list(b1)}
 
 ${colorEmoji(top2.color)} ${colorLabel(top2.color)}:
 ${list(b2)}
+
+🔥 Сексуальная жизнь:
+
+${colorEmoji(top1.color)} ${colorLabel(top1.color)}:
+${list(s1)}
+
+${colorEmoji(top2.color)} ${colorLabel(top2.color)}:
+${list(s2)}
 `;
 }
 
@@ -327,7 +372,7 @@ export default function TestApp() {
     }
   }
 
-  // ✅ Отчёт теперь начинается с блока пользователя + добавлены Отношения/Алкоголь/Работа/Бизнес
+  // ✅ Отчёт теперь начинается с блока пользователя + добавлены Отношения/Алкоголь/Работа/Бизнес/Секс
   function shareText() {
     const top1 = ranked[0];
     const top2 = ranked[1];
@@ -714,10 +759,23 @@ ${list(howToTalk)}${extra}
 }
 
 /* ---------- текстовые стили ---------- */
-const p0: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
-const p1: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
+const p0: React.CSSProperties = {
+  margin: "10px 0 0",
+  opacity: 0.88,
+  lineHeight: 1.45,
+};
+const p1: React.CSSProperties = {
+  margin: "10px 0 0",
+  opacity: 0.88,
+  lineHeight: 1.45,
+};
 const h: React.CSSProperties = { marginTop: 10, fontWeight: 800, opacity: 0.95 };
-const ul: React.CSSProperties = { margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, opacity: 0.95 };
+const ul: React.CSSProperties = {
+  margin: "6px 0 0 18px",
+  padding: 0,
+  lineHeight: 1.35,
+  opacity: 0.95,
+};
 const li: React.CSSProperties = { marginTop: 4 };
 
 /* ===================== фон ===================== */
@@ -797,7 +855,9 @@ function GlassButton({
       style={{
         borderRadius: 18,
         padding: "12px 14px",
-        backgroundColor: disabled ? "rgba(60,70,90,0.6)" : "rgba(42,50,70,0.98)",
+        backgroundColor: disabled
+          ? "rgba(60,70,90,0.6)"
+          : "rgba(42,50,70,0.98)",
         border: "1px solid rgba(255,255,255,0.22)",
         color: "rgba(255,255,255,0.95)",
         cursor: disabled ? "not-allowed" : "pointer",
@@ -833,12 +893,18 @@ function AnswerButton({
       style={{
         borderRadius: 18,
         padding: 12,
-        backgroundColor: active ? "rgba(64,76,104,0.98)" : "rgba(42,50,70,0.98)",
-        border: active ? "1px solid rgba(255,255,255,0.40)" : "1px solid rgba(255,255,255,0.22)",
+        backgroundColor: active
+          ? "rgba(64,76,104,0.98)"
+          : "rgba(42,50,70,0.98)",
+        border: active
+          ? "1px solid rgba(255,255,255,0.40)"
+          : "1px solid rgba(255,255,255,0.22)",
         color: "rgba(255,255,255,0.95)",
         cursor: "pointer",
         textAlign: "center",
-        boxShadow: active ? "0 10px 24px rgba(0,0,0,0.28)" : "0 6px 16px rgba(0,0,0,0.18)",
+        boxShadow: active
+          ? "0 10px 24px rgba(0,0,0,0.28)"
+          : "0 6px 16px rgba(0,0,0,0.18)",
         WebkitTapHighlightColor: "transparent",
         appearance: "none",
         WebkitAppearance: "none",
@@ -851,7 +917,13 @@ function AnswerButton({
   );
 }
 
-function GlassDisclosure({ title, body }: { title: string; body: React.ReactNode }) {
+function GlassDisclosure({
+  title,
+  body,
+}: {
+  title: string;
+  body: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -946,7 +1018,13 @@ function ScoreRow({ color, value }: { color: Color; value: number }) {
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+        }}
+      >
         <div style={{ fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
           {colorEmoji(color)} {colorLabel(color)}
         </div>
@@ -997,6 +1075,9 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
   const b1 = businessTips(top1.color);
   const b2 = businessTips(top2.color);
 
+  const s1 = sexTips(top1.color);
+  const s2 = sexTips(top2.color);
+
   return (
     <div>
       <div style={{ fontSize: 16, fontWeight: 900, color: "rgba(255,255,255,0.95)" }}>
@@ -1027,6 +1108,9 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
 
         <TipBlock title={`📈 Бизнес — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={b1} />
         <TipBlock title={`📈 Бизнес — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={b2} />
+
+        <TipBlock title={`🔥 Сексуальная жизнь — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={s1} />
+        <TipBlock title={`🔥 Сексуальная жизнь — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={s2} />
       </div>
     </div>
   );
