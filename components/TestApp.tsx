@@ -474,58 +474,66 @@ ${list(howToTalk)}${extra}
 
   // ✅ NEW: оплата Stars и после оплаты — отправляем полный отчёт
   async function payStarsAndUnlock() {
-    try {
-      const tg = getTgWebApp();
-      const openInvoice = (tg as any)?.openInvoice as
-        | ((url: string, cb: (status: string) => void) => void)
-        | undefined;
+  try {
+    const tg = getTgWebApp() as any;
 
-      if (!tg || !openInvoice) {
-        alert("Оплата доступна только внутри Telegram");
-        return;
-      }
+    if (!tg) {
+      alert("Открой Mini App внутри Telegram, иначе оплата недоступна.");
+      return;
+    }
 
-      setPaying(true);
+    setPaying(true);
 
-      const initData = tg.initData || "";
-      if (!initData) {
-        alert("initData не найден (открой Mini App из Telegram)");
-        return;
-      }
+    const initData = tg.initData || "";
+    if (!initData) {
+      alert("initData не найден. Открой Mini App из Telegram-бота.");
+      return;
+    }
 
-      const res = await fetch("/api/create-invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData }),
-      });
+    const res = await fetch("/api/create-invoice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData }),
+    });
 
-      if (!res.ok) {
-        alert("Ошибка создания счёта");
-        return;
-      }
+    if (!res.ok) {
+      alert("Ошибка создания счёта");
+      return;
+    }
 
-      const data = (await res.json()) as { invoiceLink?: string };
-      const invoiceLink = String(data.invoiceLink || "");
-      if (!invoiceLink) {
-        alert("Не удалось получить ссылку на оплату");
-        return;
-      }
+    const data = (await res.json()) as { invoiceLink?: string };
+    const invoiceLink = String(data.invoiceLink || "");
+    if (!invoiceLink) {
+      alert("Не удалось получить ссылку на оплату");
+      return;
+    }
 
-      openInvoice(invoiceLink, async (status) => {
+    // ✅ 1) основной путь (если поддерживается)
+    if (typeof tg.openInvoice === "function") {
+      tg.openInvoice(invoiceLink, async (status: string) => {
         if (status === "paid") {
           setPaidFull(true);
-
-          // ✅ после оплаты отправляем тебе полный отчёт отдельным сообщением
           await notifyOwner(true);
         }
       });
-    } catch (e) {
-      console.error(e);
-      alert("Ошибка оплаты");
-    } finally {
-      setPaying(false);
+      return;
     }
+
+    // ✅ 2) fallback: откроет ссылку инвойса внутри Telegram
+    if (typeof tg.openLink === "function") {
+      tg.openLink(invoiceLink);
+      return;
+    }
+
+    // ✅ 3) самый простой fallback
+    window.location.href = invoiceLink;
+  } catch (e) {
+    console.error(e);
+    alert("Ошибка оплаты");
+  } finally {
+    setPaying(false);
   }
+}
 
   function setAnswer(value: number) {
     const v = clampScore(value);
