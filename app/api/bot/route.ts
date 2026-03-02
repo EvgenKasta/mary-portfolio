@@ -1,20 +1,14 @@
-import { NextResponse } from "next/server";
-
 export const runtime = "nodejs";
 
 type TgUpdate = {
-  update_id: number;
-
   message?: {
-    message_id: number;
     text?: string;
-    chat: { id: number };
+    chat?: { id: number };
+    from?: { id: number; username?: string; first_name?: string; last_name?: string };
     successful_payment?: any;
   };
-
   pre_checkout_query?: {
     id: string;
-    from: { id: number };
     currency: string;
     total_amount: number;
     invoice_payload: string;
@@ -43,20 +37,25 @@ async function tgCall(method: string, payload: any) {
     console.error("Telegram API error:", { method, status: res.status, data });
   }
 
-  return { res, data };
+  return data;
 }
 
 function startKeyboard(appUrl: string) {
   return {
-    inline_keyboard: [
-      [
-        {
-          text: "🚀 Начать тест",
-          web_app: { url: appUrl },
-        },
-      ],
-    ],
+    inline_keyboard: [[{ text: "🚀 Начать тест", web_app: { url: appUrl } }]],
   };
+}
+
+function formatNewUserBlock(from?: TgUpdate["message"]["from"]) {
+  if (!from) return "👤 Новый пользователь: (unknown)";
+
+  const username = from.username ? `@${from.username}` : "без username";
+  const fullName = [from.first_name, from.last_name].filter(Boolean).join(" ") || "не указано";
+
+  return `👤 Новый пользователь:
+ID: ${from.id}
+Логин: ${username}
+Имя: ${fullName}`;
 }
 
 export async function POST(req: Request) {
@@ -65,74 +64,68 @@ export async function POST(req: Request) {
   try {
     update = (await req.json()) as TgUpdate;
   } catch {
-    return NextResponse.json({ ok: true });
+    return new Response("ok");
   }
 
   try {
-    // 1) ✅ Stars payment: обязательно отвечаем на pre_checkout_query
+    // ✅ Stars: обязательно отвечаем на pre_checkout_query
     if (update?.pre_checkout_query) {
-      const q = update.pre_checkout_query;
-
-      // если хочешь — можешь проверять payload/currency
-      const ok = true;
-
       await tgCall("answerPreCheckoutQuery", {
-        pre_checkout_query_id: q.id,
-        ok,
+        pre_checkout_query_id: update.pre_checkout_query.id,
+        ok: true,
       });
-
-      return NextResponse.json({ ok: true });
+      return new Response("ok");
     }
 
-    const appUrl = getEnv("APP_URL");
     const msg = update?.message;
     const text = msg?.text || "";
     const chatId = msg?.chat?.id;
 
-    if (!chatId) return NextResponse.json({ ok: true });
+    if (!chatId) return new Response("ok");
 
-    // 2) (опционально) лог успешной оплаты
+    // (опционально) лог успешной оплаты
     if (msg?.successful_payment) {
       await tgCall("sendMessage", {
         chat_id: chatId,
-        text: "✅ Оплата получена! Возвращайся в приложение — полный отчёт уже доступен.",
+        text: "✅ Оплата получена! Полный отчёт открыт в приложении ⭐",
       });
-
-      return NextResponse.json({ ok: true });
+      return new Response("ok");
     }
 
-    // 3) /start
+    // ✅ /start как было
     if (text.startsWith("/start")) {
+      const appUrl = getEnv("APP_URL");
+
       const caption =
-        "Привет! 👋\n\nЭто тест DISC Colors.\nНажми кнопку ниже — открою тест ✅\n\n(Откроется в режиме WebApp)";
+        "Привет! 👋\n\nЭто тест DISC Colors.\nНажми кнопку ниже — открою тест ✅";
 
-      const photoUrl = process.env.START_PHOTO_URL;
+      // приветствие пользователю
+      await tgCall("sendMessage", {
+        chat_id: chatId,
+        text: caption,
+        reply_markup: startKeyboard(appUrl),
+      });
 
-      if (photoUrl) {
-        await tgCall("sendPhoto", {
-          chat_id: chatId,
-          photo: photoUrl,
-          caption,
-          reply_markup: startKeyboard(appUrl),
-        });
-      } else {
+      // ✅ уведомление владельцу о новом пользователе (ВОЗВРАЩАЕМ!)
+      const ownerChatId = process.env.OWNER_CHAT_ID || "";
+      if (ownerChatId) {
         await tgCall("sendMessage", {
-          chat_id: chatId,
-          text: caption,
-          reply_markup: startKeyboard(appUrl),
+          chat_id: ownerChatId,
+          text: formatNewUserBlock(msg.from),
+          disable_web_page_preview: true,
         });
       }
 
-      return NextResponse.json({ ok: true });
+      return new Response("ok");
     }
 
-    return NextResponse.json({ ok: true });
+    return new Response("ok");
   } catch (e) {
-    console.error("bot webhook error:", e);
-    return NextResponse.json({ ok: true });
+    console.error("bot route error", e);
+    return new Response("ok");
   }
 }
 
 export async function GET() {
-  return NextResponse.json({ ok: true, hint: "Telegram webhook endpoint. Use POST." });
+  return new Response("ok");
 }
