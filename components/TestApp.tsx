@@ -34,7 +34,8 @@ function formatUserBlock(user?: TgUser | null) {
   if (!user) return ""; // если открыто не из TG — блока не будет
 
   const username = user.username ? `@${user.username}` : "—";
-  const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "—";
+  const fullName =
+    [user.first_name, user.last_name].filter(Boolean).join(" ") || "—";
 
   return `👤 Пользователь:
 ID: ${user.id}
@@ -43,6 +44,100 @@ ID: ${user.id}
 
 `;
 }
+
+/* ===================== NEW: Отношения + Алкоголь ===================== */
+
+function relationTips(color: Color): string[] {
+  switch (color) {
+    case "red":
+      return [
+        "нужны уважение, прямота и действия (а не «разговоры ради разговоров»)",
+        "может давить и «вести» — важны чёткие границы и договорённости",
+        "реагирует на тормоза/неопределённость — успокаивает конкретика",
+        "лучше работает формат: цель → план → срок → результат",
+      ];
+    case "yellow":
+      return [
+        "нужны эмоции, внимание, новизна и общение",
+        "может флиртовать/распыляться — спасают тёплые договорённости",
+        "плохо переносит холод и игнор — лучше чаще проявляться",
+        "любит совместные впечатления: поездки, события, идеи",
+      ];
+    case "green":
+      return [
+        "про стабильность, заботу и ощущение «мы команда»",
+        "избегает конфликтов — важно говорить мягко, но прямо",
+        "раскрывается через безопасность и регулярность",
+        "ценит верность, поддержку и спокойный быт без драм",
+      ];
+    case "blue":
+      return [
+        "нужны смысл, надёжность и интеллектуальная близость",
+        "может держать дистанцию — нужно время и доверие",
+        "конфликты решает фактами и логикой, не эмоциями",
+        "ценит уважение к границам и предсказуемость",
+      ];
+  }
+}
+
+function alcoholTips(color: Color): string[] {
+  switch (color) {
+    case "red":
+      return [
+        "становится ещё прямее и смелее; может сильнее «давить»",
+        "легко уходит в режим «я решаю» — лучше держать градус и темп",
+        "если злится — пауза/вода/смена темы работают лучше всего",
+      ];
+    case "yellow":
+      return [
+        "больше эмоций, шуток и общения; легко «разгоняется»",
+        "возможны импульсивные решения и лишние обещания",
+        "лучше держать рамки: вода/еда/тайминг/без догонов",
+      ];
+    case "green":
+      return [
+        "становится мягче и теплее, больше разговоров «по душам»",
+        "может соглашаться на лишнее, чтобы не портить атмосферу",
+        "лучше спокойная компания и безопасный темп",
+      ];
+    case "blue":
+      return [
+        "может либо уйти в наблюдение/молчание, либо в философию",
+        "контроль снижается — важно не перегружать разговорами",
+        "если устал — лучше домой, чем «досиживать из вежливости»",
+      ];
+  }
+}
+
+function formatExtraBlocksForReport(top1: { color: Color }, top2: { color: Color }) {
+  const list = (items: string[]) => items.map((x) => `• ${x}`).join("\n");
+
+  const rel1 = relationTips(top1.color);
+  const rel2 = relationTips(top2.color);
+  const alc1 = alcoholTips(top1.color);
+  const alc2 = alcoholTips(top2.color);
+
+  return `
+
+💞 Отношения:
+
+${colorEmoji(top1.color)} ${colorLabel(top1.color)}:
+${list(rel1)}
+
+${colorEmoji(top2.color)} ${colorLabel(top2.color)}:
+${list(rel2)}
+
+🍷 Алкоголь:
+
+${colorEmoji(top1.color)} ${colorLabel(top1.color)}:
+${list(alc1)}
+
+${colorEmoji(top2.color)} ${colorLabel(top2.color)}:
+${list(alc2)}
+`;
+}
+
+/* ===================== APP ===================== */
 
 export default function TestApp() {
   const [stage, setStage] = useState<Stage>("start");
@@ -142,7 +237,7 @@ export default function TestApp() {
     }
   }
 
-  // ✅ Отчёт теперь начинается с блока пользователя (если он есть)
+  // ✅ Отчёт теперь начинается с блока пользователя (если он есть) + добавлены Отношения/Алкоголь
   function shareText() {
     const top1 = ranked[0];
     const top2 = ranked[1];
@@ -157,6 +252,7 @@ export default function TestApp() {
     const howToTalk = [...t1.howToTalk, ...t2.howToTalk].slice(0, 8);
 
     const userBlock = formatUserBlock(tgUser);
+    const extra = formatExtraBlocksForReport(top1, top2);
 
     return `${userBlock}Мой профиль DISC:
 ${colorEmoji(top1.color)} ${colorLabel(top1.color)} — ${top1.value}
@@ -180,34 +276,34 @@ ${list(t2.strengths)}
 ${list(triggers)}
 
 Как с тобой общаться:
-${list(howToTalk)}
+${list(howToTalk)}${extra}
 
 Пройти тест: ${botLink}`;
   }
 
   async function notifyOwner() {
-  try {
-    const tg = getTgWebApp();
+    try {
+      const tg = getTgWebApp();
 
-    const initData = tg?.initData || "";
-    const user = (tg as any)?.initDataUnsafe?.user || null;
+      const initData = tg?.initData || "";
+      const user = (tg as any)?.initDataUnsafe?.user || null;
 
-    const text = shareText();
+      const text = shareText();
 
-    await fetch("/api/notify-owner", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        initData,
-        user,
-        text,
-        secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET || "",
-      }),
-    });
-  } catch {
-    // ignore
+      await fetch("/api/notify-owner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData,
+          user,
+          text,
+          secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET || "",
+        }),
+      });
+    } catch {
+      // ignore
+    }
   }
-}
 
   function setAnswer(value: number) {
     const v = clampScore(value);
@@ -787,6 +883,12 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
   const t1 = shortTips(top1.color);
   const t2 = shortTips(top2.color);
 
+  const r1 = relationTips(top1.color);
+  const r2 = relationTips(top2.color);
+
+  const a1 = alcoholTips(top1.color);
+  const a2 = alcoholTips(top2.color);
+
   return (
     <div>
       <div style={{ fontSize: 16, fontWeight: 900, color: "rgba(255,255,255,0.95)" }}>
@@ -795,10 +897,22 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
       </div>
 
       <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-        <TipBlock title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`} items={t1.strengths} />
-        <TipBlock title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`} items={t2.strengths} />
+        <TipBlock
+          title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`}
+          items={t1.strengths}
+        />
+        <TipBlock
+          title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`}
+          items={t2.strengths}
+        />
         <TipBlock title="Триггеры" items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
         <TipBlock title="Как с тобой общаться" items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
+
+        <TipBlock title={`💞 Отношения — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={r1} />
+        <TipBlock title={`💞 Отношения — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={r2} />
+
+        <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={a1} />
+        <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={a2} />
       </div>
     </div>
   );
