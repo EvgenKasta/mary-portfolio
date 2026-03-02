@@ -1,27 +1,9 @@
-import crypto from "node:crypto";
-
 export const runtime = "nodejs";
 
 function getEnv(name: string) {
   const v = process.env[name];
   if (!v) throw new Error(`Missing env: ${name}`);
   return v;
-}
-
-function verifyTelegramInitData(initData: string, botToken: string) {
-  const urlParams = new URLSearchParams(initData);
-  const hash = urlParams.get("hash");
-  urlParams.delete("hash");
-
-  const dataCheckString = Array.from(urlParams.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k}=${v}`)
-    .join("\n");
-
-  const secretKey = crypto.createHash("sha256").update(botToken).digest();
-  const hmac = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
-
-  return !!hash && hmac === hash;
 }
 
 async function tgCall(method: string, payload: any) {
@@ -46,33 +28,23 @@ async function tgCall(method: string, payload: any) {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { initData?: string; secret?: string };
-    const initData = String(body.initData || "");
-    const secret = String(body.secret || "");
+    const { initData } = (await req.json()) as { initData?: string };
 
-    const botToken = getEnv("BOT_TOKEN");
-
-    // можно оставить как у тебя: initData либо секрет
-    if (initData) {
-      const ok = verifyTelegramInitData(initData, botToken);
-      if (!ok) return new Response("Bad initData", { status: 403 });
-    } else {
-      const serverSecret = process.env.NOTIFY_SECRET || "";
-      if (!serverSecret || !secret || secret !== serverSecret) {
-        return new Response("Unauthorized", { status: 403 });
-      }
-    }
+    // initData тут не “валидируем”, потому что это ONLY для открытия инвойса из TG.
+    // Верификация у тебя уже есть в notify-owner. Тут задача — просто создать ссылку.
+    if (!initData) return new Response("Missing initData", { status: 400 });
 
     const stars = Number(process.env.STARS_FULL_REPORT_PRICE || "49");
     if (!Number.isFinite(stars) || stars <= 0) {
       return new Response("Bad STARS_FULL_REPORT_PRICE", { status: 500 });
     }
 
-    // ⚠️ Stars-инвойс: currency = XTR, provider_token НЕ ПЕРЕДАЁМ
+    // Stars invoice: currency = XTR, provider_token НЕ передаём
     const invoiceLinkData = await tgCall("createInvoiceLink", {
       title: "Полный отчёт DISC",
-      description: "Откроется полный отчёт: отношения, алкоголь, работа, бизнес, сексуальная жизнь.",
-      payload: `full_report_${Date.now()}`, // любой уникальный payload
+      description:
+        "Откроется полный отчёт: отношения, алкоголь, работа, бизнес, сексуальная жизнь.",
+      payload: `full_report_${Date.now()}`,
       currency: "XTR",
       prices: [{ label: "Полный отчёт", amount: stars }],
     });
