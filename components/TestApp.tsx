@@ -418,7 +418,9 @@ export default function TestApp() {
     const userBlock = formatUserBlock(tgUser);
     const extra = full ? formatExtraBlocksForReport(top1, top2) : "";
 
-    const paidMark = full ? "\n✅ Полный отчёт: ОПЛАЧЕНО ⭐\n" : "\n⚠️ Полный отчёт: НЕ ОПЛАЧЕН ⭐\n";
+    const paidMark = full
+      ? "\n✅ Полный отчёт: ОПЛАЧЕНО ⭐\n"
+      : "\n⚠️ Полный отчёт: НЕ ОПЛАЧЕН ⭐\n";
 
     return `${userBlock}Мой профиль DISC:
 ${colorEmoji(top1.color)} ${colorLabel(top1.color)} — ${top1.value}
@@ -474,66 +476,79 @@ ${list(howToTalk)}${extra}
 
   // ✅ NEW: оплата Stars и после оплаты — отправляем полный отчёт
   async function payStarsAndUnlock() {
-  try {
-    const tg = getTgWebApp() as any;
+    try {
+      const tg = getTgWebApp() as any;
 
-    if (!tg) {
-      alert("Открой Mini App внутри Telegram, иначе оплата недоступна.");
-      return;
-    }
+      if (!tg) {
+        alert("Открой Mini App внутри Telegram, иначе оплата недоступна.");
+        return;
+      }
 
-    setPaying(true);
+      setPaying(true);
 
-    const initData = tg.initData || "";
-    if (!initData) {
-      alert("initData не найден. Открой Mini App из Telegram-бота.");
-      return;
-    }
+      const initData = tg.initData || "";
+      if (!initData) {
+        alert("initData не найден. Открой Mini App из Telegram-бота.");
+        return;
+      }
 
-    const res = await fetch("/api/create-invoice", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData }),
-    });
-
-    if (!res.ok) {
-      alert("Ошибка создания счёта");
-      return;
-    }
-
-    const data = (await res.json()) as { invoiceLink?: string };
-    const invoiceLink = String(data.invoiceLink || "");
-    if (!invoiceLink) {
-      alert("Не удалось получить ссылку на оплату");
-      return;
-    }
-
-    // ✅ 1) основной путь (если поддерживается)
-    if (typeof tg.openInvoice === "function") {
-      tg.openInvoice(invoiceLink, async (status: string) => {
-        if (status === "paid") {
-          setPaidFull(true);
-          await notifyOwner(true);
-        }
+      const res = await fetch("/api/create-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData }),
       });
-      return;
-    }
 
-    // ✅ 2) fallback: откроет ссылку инвойса внутри Telegram
-    if (typeof tg.openLink === "function") {
-      tg.openLink(invoiceLink);
-      return;
-    }
+      const raw = await res.text();
+      let data: any = null;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = null;
+      }
 
-    // ✅ 3) самый простой fallback
-    window.location.href = invoiceLink;
-  } catch (e) {
-    console.error(e);
-    alert("Ошибка оплаты");
-  } finally {
-    setPaying(false);
+      if (!res.ok) {
+        const msg =
+          data?.error ||
+          data?.reason ||
+          data?.telegram_json?.description ||
+          raw ||
+          `HTTP ${res.status}`;
+        alert(`Ошибка создания счёта:\n${msg}`);
+        return;
+      }
+
+      const invoiceLink = String(data?.invoiceLink || "");
+      if (!invoiceLink) {
+        alert(`Не удалось получить ссылку на оплату:\n${raw}`);
+        return;
+      }
+
+      // ✅ 1) основной путь (если поддерживается)
+      if (typeof tg.openInvoice === "function") {
+        tg.openInvoice(invoiceLink, async (status: string) => {
+          if (status === "paid") {
+            setPaidFull(true);
+            await notifyOwner(true);
+          }
+        });
+        return;
+      }
+
+      // ✅ 2) fallback: откроет ссылку инвойса внутри Telegram
+      if (typeof tg.openLink === "function") {
+        tg.openLink(invoiceLink);
+        return;
+      }
+
+      // ✅ 3) самый простой fallback
+      window.location.href = invoiceLink;
+    } catch (e: any) {
+      console.error(e);
+      alert(`Ошибка оплаты:\n${String(e?.message || e)}`);
+    } finally {
+      setPaying(false);
+    }
   }
-}
 
   function setAnswer(value: number) {
     const v = clampScore(value);
@@ -850,7 +865,8 @@ ${list(howToTalk)}${extra}
                 {paying ? "Открываю оплату…" : "⭐ Открыть полный отчёт"}
               </GlassButton>
               <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
-                Полный отчёт откроет разделы: Отношения, Алкоголь, Работа, Бизнес, Сексуальная жизнь.
+                Полный отчёт откроет разделы: Отношения, Алкоголь, Работа,
+                Бизнес, Сексуальная жизнь.
               </div>
             </div>
           )}
@@ -1202,7 +1218,13 @@ function TopSummary({
 
   return (
     <div>
-      <div style={{ fontSize: 16, fontWeight: 900, color: "rgba(255,255,255,0.95)" }}>
+      <div
+        style={{
+          fontSize: 16,
+          fontWeight: 900,
+          color: "rgba(255,255,255,0.95)",
+        }}
+      >
         Твой профиль: {colorEmoji(top1.color)} {colorLabel(top1.color)} +{" "}
         {colorEmoji(top2.color)} {colorLabel(top2.color)}
       </div>
@@ -1216,26 +1238,82 @@ function TopSummary({
           title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`}
           items={t2.strengths}
         />
-        <TipBlock title="Триггеры" items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
-        <TipBlock title="Как с тобой общаться" items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
+        <TipBlock
+          title="Триггеры"
+          items={[...t1.triggers, ...t2.triggers].slice(0, 3)}
+        />
+        <TipBlock
+          title="Как с тобой общаться"
+          items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)}
+        />
 
         {/* ✅ платные блоки показываем только после оплаты */}
         {paidFull && (
           <>
-            <TipBlock title={`💞 Отношения — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={r1} />
-            <TipBlock title={`💞 Отношения — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={r2} />
+            <TipBlock
+              title={`💞 Отношения — ${colorEmoji(top1.color)} ${colorLabel(
+                top1.color
+              )}`}
+              items={r1}
+            />
+            <TipBlock
+              title={`💞 Отношения — ${colorEmoji(top2.color)} ${colorLabel(
+                top2.color
+              )}`}
+              items={r2}
+            />
 
-            <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={a1} />
-            <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={a2} />
+            <TipBlock
+              title={`🍷 Алкоголь — ${colorEmoji(top1.color)} ${colorLabel(
+                top1.color
+              )}`}
+              items={a1}
+            />
+            <TipBlock
+              title={`🍷 Алкоголь — ${colorEmoji(top2.color)} ${colorLabel(
+                top2.color
+              )}`}
+              items={a2}
+            />
 
-            <TipBlock title={`💼 Работа — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={w1} />
-            <TipBlock title={`💼 Работа — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={w2} />
+            <TipBlock
+              title={`💼 Работа — ${colorEmoji(top1.color)} ${colorLabel(
+                top1.color
+              )}`}
+              items={w1}
+            />
+            <TipBlock
+              title={`💼 Работа — ${colorEmoji(top2.color)} ${colorLabel(
+                top2.color
+              )}`}
+              items={w2}
+            />
 
-            <TipBlock title={`📈 Бизнес — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={b1} />
-            <TipBlock title={`📈 Бизнес — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={b2} />
+            <TipBlock
+              title={`📈 Бизнес — ${colorEmoji(top1.color)} ${colorLabel(
+                top1.color
+              )}`}
+              items={b1}
+            />
+            <TipBlock
+              title={`📈 Бизнес — ${colorEmoji(top2.color)} ${colorLabel(
+                top2.color
+              )}`}
+              items={b2}
+            />
 
-            <TipBlock title={`🔥 Сексуальная жизнь — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={s1} />
-            <TipBlock title={`🔥 Сексуальная жизнь — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={s2} />
+            <TipBlock
+              title={`🔥 Сексуальная жизнь — ${colorEmoji(
+                top1.color
+              )} ${colorLabel(top1.color)}`}
+              items={s1}
+            />
+            <TipBlock
+              title={`🔥 Сексуальная жизнь — ${colorEmoji(
+                top2.color
+              )} ${colorLabel(top2.color)}`}
+              items={s2}
+            />
           </>
         )}
       </div>
@@ -1246,7 +1324,14 @@ function TopSummary({
 function TipBlock({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
-      <div style={{ fontSize: 13, opacity: 0.9, fontWeight: 800, color: "rgba(255,255,255,0.95)" }}>
+      <div
+        style={{
+          fontSize: 13,
+          opacity: 0.9,
+          fontWeight: 800,
+          color: "rgba(255,255,255,0.95)",
+        }}
+      >
         {title}
       </div>
       <ul
