@@ -3,12 +3,11 @@ export type TelegramWebApp = {
   expand: () => void;
   close: () => void;
 
-  // 🆕 добавили метод для отправки данных в бот
-  sendData?: (data: string) => void;
-
-  // Telegram добавляет методы не везде, поэтому держим опциональными
   requestFullscreen?: () => void;
   disableVerticalSwipes?: () => void;
+
+  // ✅ Stars invoice
+  openInvoice?: (url: string, cb?: (status: "paid" | "cancelled" | "failed" | "pending") => void) => void;
 
   MainButton?: {
     setText: (t: string) => void;
@@ -39,14 +38,8 @@ export function tgSafeInit() {
 
   try {
     tg.ready();
-
-    // ✅ максимально раскрыть WebApp
     tg.expand();
-
-    // ✅ если доступно — просим фуллскрин
     tg.requestFullscreen?.();
-
-    // ✅ iOS фикс жестов
     tg.disableVerticalSwipes?.();
   } catch {
     // ignore
