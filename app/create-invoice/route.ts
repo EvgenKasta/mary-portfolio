@@ -1,59 +1,53 @@
+import crypto from "node:crypto";
+
 export const runtime = "nodejs";
 
-function getEnv(name: string) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
-
-async function tgCall(method: string, payload: any) {
-  const token = getEnv("BOT_TOKEN");
-  const url = `https://api.telegram.org/bot${token}/${method}`;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok || !data?.ok) {
-    console.error("Telegram API error:", { method, status: res.status, data });
-    throw new Error(`Telegram API error: ${method}`);
-  }
-
-  return data;
-}
-
-export async function POST(req: Request) {
+export async function POST() {
   try {
-    const { initData } = (await req.json()) as { initData?: string };
+    const botToken = process.env.BOT_TOKEN || "";
+    if (!botToken) return new Response("Missing BOT_TOKEN", { status: 500 });
 
-    // initData тут не “валидируем”, потому что это ONLY для открытия инвойса из TG.
-    // Верификация у тебя уже есть в notify-owner. Тут задача — просто создать ссылку.
-    if (!initData) return new Response("Missing initData", { status: 400 });
+    // Цена в звёздах (XTR). Можешь поменять.
+    const STARS_AMOUNT = 49;
 
-    const stars = Number(process.env.STARS_FULL_REPORT_PRICE || "49");
-    if (!Number.isFinite(stars) || stars <= 0) {
-      return new Response("Bad STARS_FULL_REPORT_PRICE", { status: 500 });
-    }
+    const payload = `full_report_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`;
 
-    // Stars invoice: currency = XTR, provider_token НЕ передаём
-    const invoiceLinkData = await tgCall("createInvoiceLink", {
-      title: "Полный отчёт DISC",
-      description:
-        "Откроется полный отчёт: отношения, алкоголь, работа, бизнес, сексуальная жизнь.",
-      payload: `full_report_${Date.now()}`,
-      currency: "XTR",
-      prices: [{ label: "Полный отчёт", amount: stars }],
+    const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/createInvoiceLink`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Полный отчёт DISC",
+        description: "Откроет разделы: Отношения, Алкоголь, Работа, Бизнес, Сексуальная жизнь.",
+        payload,
+        provider_token: "", // ✅ для Stars — пустая строка
+        currency: "XTR", // ✅ Stars
+        prices: [{ label: "Полный отчёт", amount: STARS_AMOUNT }],
+      }),
     });
 
-    const invoiceLink = String(invoiceLinkData?.result || "");
-    if (!invoiceLink) return new Response("No invoice link", { status: 502 });
+    const bodyText = await tgRes.text();
 
-    return Response.json({ ok: true, invoiceLink, stars });
-  } catch (e: any) {
+    if (!tgRes.ok) {
+      console.error("createInvoiceLink failed", { status: tgRes.status, body: bodyText });
+      return new Response("Invoice create failed", { status: 502 });
+    }
+
+    let json: any = null;
+    try {
+      json = JSON.parse(bodyText);
+    } catch {
+      console.error("createInvoiceLink bad json", bodyText);
+      return new Response("Bad Telegram response", { status: 502 });
+    }
+
+    const invoiceLink = json?.result;
+    if (!invoiceLink || typeof invoiceLink !== "string") {
+      console.error("createInvoiceLink missing result", json);
+      return new Response("No invoice link", { status: 502 });
+    }
+
+    return Response.json({ ok: true, invoiceLink });
+  } catch (e) {
     console.error("create-invoice error", e);
     return new Response("Server error", { status: 500 });
   }
