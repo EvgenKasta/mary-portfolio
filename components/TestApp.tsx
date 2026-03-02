@@ -16,6 +16,7 @@ type Stage = "start" | "test" | "result";
 
 const MAX_Q = 40;
 const STORAGE_KEY = "disc_colors_answers_v1";
+const PAID_KEY = "disc_colors_paid_full_v1";
 
 function clampScore(v: number) {
   if (v < 0) return 0;
@@ -31,7 +32,7 @@ type TgUser = {
 };
 
 function formatUserBlock(user?: TgUser | null) {
-  if (!user) return ""; // если открыто не из TG — блока не будет
+  if (!user) return "";
 
   const username = user.username ? `@${user.username}` : "—";
   const fullName =
@@ -45,7 +46,7 @@ ID: ${user.id}
 `;
 }
 
-/* ===================== NEW: Отношения + Алкоголь + Работа + Бизнес + Секс ===================== */
+/* ===================== Отношения + Алкоголь + Работа + Бизнес + Секс ===================== */
 
 function relationTips(color: Color): string[] {
   switch (color) {
@@ -175,56 +176,50 @@ function businessTips(color: Color): string[] {
   }
 }
 
-/* ✅ NEW: Сексуальная жизнь (без жести, 18+ не нужно) */
 function sexTips(color: Color): string[] {
   switch (color) {
     case "red":
       return [
-        "инициативный и прямой: любит скорость и понятные сигналы",
-        "важны страсть, драйв и ощущение «я нужен/нужна»",
-        "может доминировать — спасают договорённости и обратная связь",
-        "лучше всего: динамика + уважение к границам",
+        "инициативный, любит драйв и доминирование (важно: согласие и границы)",
+        "возбуждает «вызов» и уверенность партнёра",
+        "не любит тянуть — предпочитает прямо сказать, что хочет",
+        "лучше всего работает: конкретика, роль/игра, активность",
       ];
     case "yellow":
       return [
-        "про игру, флирт, эмоции и атмосферу",
-        "важна новизна и внимание к нему/ней",
-        "может загораться быстро — помогает разнообразие и легкость",
-        "лучше всего: юмор + инициативность + комплименты",
+        "про флирт, игру и эмоции; важна атмосфера и внимание",
+        "возбуждает новизна, комплименты, «мы сейчас кайфуем»",
+        "может быстро загораться и так же быстро переключаться",
+        "лучше всего: лёгкость, юмор, эксперименты, переписка/прелюдия",
       ];
     case "green":
       return [
-        "про нежность, заботу и безопасность",
-        "важны доверие, тактильность и стабильная близость",
-        "плохо переносит грубость и холод",
-        "лучше всего: мягкость + «я рядом» + предсказуемость",
+        "про нежность, заботу и безопасность; нужен контакт и доверие",
+        "возбуждает стабильность, тактильность, чувство «нас»",
+        "может стесняться инициативы — важно мягко приглашать",
+        "лучше всего: медленно, тепло, много прикосновений и спокойный ритм",
       ];
     case "blue":
       return [
-        "про качество и комфорт: нужно время «разогнаться»",
-        "важны уважение, границы и чистая коммуникация",
-        "может быть сдержанным — раскрывается через доверие",
-        "лучше всего: спокойный темп + понятные желания + безопасная атмосфера",
+        "про качество, смысл и контроль; важны чистота, комфорт, детали",
+        "возбуждает интеллектуальная близость и предсказуемость",
+        "может быть сдержанным — раскрывается через доверие и сценарий",
+        "лучше всего: чёткие предпочтения, разговор, аккуратные эксперименты",
       ];
   }
 }
 
-function formatExtraBlocksForReport(
-  top1: { color: Color },
-  top2: { color: Color }
-) {
+function formatPaidBlocksForReport(top1: { color: Color }, top2: { color: Color }) {
   const list = (items: string[]) => items.map((x) => `• ${x}`).join("\n");
 
   const rel1 = relationTips(top1.color);
   const rel2 = relationTips(top2.color);
   const alc1 = alcoholTips(top1.color);
   const alc2 = alcoholTips(top2.color);
-
   const w1 = workTips(top1.color);
   const w2 = workTips(top2.color);
   const b1 = businessTips(top1.color);
   const b2 = businessTips(top2.color);
-
   const s1 = sexTips(top1.color);
   const s2 = sexTips(top2.color);
 
@@ -276,27 +271,27 @@ ${list(s2)}
 
 export default function TestApp() {
   const [stage, setStage] = useState<Stage>("start");
-  const [index, setIndex] = useState<number>(0); // 0..39
+  const [index, setIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isTg, setIsTg] = useState(false);
-
-  // ✅ сохраняем, кто проходит тест
   const [tgUser, setTgUser] = useState<TgUser | null>(null);
+
+  // ✅ оплатил ли полный отчёт
+  const [paidFull, setPaidFull] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [starsPrice, setStarsPrice] = useState<number | null>(null);
 
   useEffect(() => {
     const { isTg } = tgSafeInit();
     setIsTg(isTg);
 
-    // ✅ берём юзера сразу при открытии Mini App
     try {
       const tg = getTgWebApp();
       const user = (tg as any)?.initDataUnsafe?.user as TgUser | undefined;
       if (user?.id) setTgUser(user);
-    } catch {
-      // ignore
-    }
+    } catch {}
 
-    // ✅ восстановление состояния
+    // restore
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -311,21 +306,31 @@ export default function TestApp() {
         if (parsed.stage) setStage(parsed.stage);
         if (parsed.tgUser?.id) setTgUser(parsed.tgUser);
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
+
+    // paid restore
+    try {
+      const rawPaid = localStorage.getItem(PAID_KEY);
+      if (rawPaid) {
+        const p = JSON.parse(rawPaid) as { paid?: boolean; uid?: number };
+        if (p?.paid && (!p.uid || p.uid === (getTgWebApp() as any)?.initDataUnsafe?.user?.id)) {
+          setPaidFull(true);
+        }
+      }
+    } catch {}
   }, []);
 
   useEffect(() => {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ answers, index, stage, tgUser })
-      );
-    } catch {
-      // ignore
-    }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answers, index, stage, tgUser }));
+    } catch {}
   }, [answers, index, stage, tgUser]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PAID_KEY, JSON.stringify({ paid: paidFull, uid: tgUser?.id || null }));
+    } catch {}
+  }, [paidFull, tgUser?.id]);
 
   const q = QUESTIONS_RU[index];
 
@@ -334,10 +339,7 @@ export default function TestApp() {
     return Math.round((answeredCount / MAX_Q) * 100);
   }, [answers]);
 
-  const isComplete = useMemo(
-    () => Object.keys(answers).length >= MAX_Q,
-    [answers]
-  );
+  const isComplete = useMemo(() => Object.keys(answers).length >= MAX_Q, [answers]);
 
   const canPrev = stage === "test" && index > 0;
   const canNext = stage === "test" && index < MAX_Q - 1;
@@ -351,29 +353,26 @@ export default function TestApp() {
     setStage("test");
     setIndex(0);
 
-    // ✅ если вдруг tgUser ещё не успел проставиться — пробуем ещё раз
     try {
       const tg = getTgWebApp();
       const user = (tg as any)?.initDataUnsafe?.user as TgUser | undefined;
       if (user?.id) setTgUser(user);
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
   function reset() {
     setAnswers({});
     setIndex(0);
     setStage("start");
+    setPaidFull(false);
+
     try {
       localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+      localStorage.removeItem(PAID_KEY);
+    } catch {}
   }
 
-  // ✅ Отчёт теперь начинается с блока пользователя + добавлены Отношения/Алкоголь/Работа/Бизнес/Секс
-  function shareText() {
+  function shareText(includePaidBlocks: boolean) {
     const top1 = ranked[0];
     const top2 = ranked[1];
     const botLink = "https://t.me/MaryPortfolioBot";
@@ -387,7 +386,7 @@ export default function TestApp() {
     const howToTalk = [...t1.howToTalk, ...t2.howToTalk].slice(0, 8);
 
     const userBlock = formatUserBlock(tgUser);
-    const extra = formatExtraBlocksForReport(top1, top2);
+    const paidBlocks = includePaidBlocks ? formatPaidBlocksForReport(top1, top2) : "";
 
     return `${userBlock}Мой профиль DISC:
 ${colorEmoji(top1.color)} ${colorLabel(top1.color)} — ${top1.value}
@@ -411,7 +410,7 @@ ${list(t2.strengths)}
 ${list(triggers)}
 
 Как с тобой общаться:
-${list(howToTalk)}${extra}
+${list(howToTalk)}${paidBlocks}
 
 Пройти тест: ${botLink}`;
   }
@@ -419,24 +418,78 @@ ${list(howToTalk)}${extra}
   async function notifyOwner() {
     try {
       const tg = getTgWebApp();
-
       const initData = tg?.initData || "";
-      const user = (tg as any)?.initDataUnsafe?.user || null;
-
-      const text = shareText();
+      const text = shareText(paidFull);
 
       await fetch("/api/notify-owner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           initData,
-          user,
           text,
           secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET || "",
         }),
       });
-    } catch {
-      // ignore
+    } catch {}
+  }
+
+  async function payFullReport() {
+    if (!isTg) {
+      alert("Открывай через Telegram, чтобы оплатить ⭐");
+      return;
+    }
+
+    const tg = getTgWebApp();
+    if (!tg?.openInvoice) {
+      alert("В этом клиенте Telegram не поддерживается оплата из Mini App 😕");
+      return;
+    }
+
+    setPaying(true);
+    try {
+      const initData = tg.initData || "";
+
+      const res = await fetch("/api/create-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          initData,
+          secret: process.env.NEXT_PUBLIC_NOTIFY_SECRET || "",
+        }),
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        console.error("create-invoice failed", res.status, t);
+        alert("Не получилось создать счёт 😕");
+        return;
+      }
+
+      const data = (await res.json()) as { invoiceLink?: string; stars?: number };
+      const link = String(data.invoiceLink || "");
+      const stars = typeof data.stars === "number" ? data.stars : null;
+      if (stars) setStarsPrice(stars);
+
+      if (!link) {
+        alert("Пустая ссылка счёта 😕");
+        return;
+      }
+
+      tg.openInvoice(link, (status) => {
+        // status: paid | cancelled | failed | pending
+        if (status === "paid") {
+          setPaidFull(true);
+          // опционально: отправим владельцу уже полный отчёт
+          void notifyOwner();
+        } else if (status === "failed") {
+          alert("Оплата не прошла 😕");
+        }
+      });
+    } catch (e) {
+      console.error("payFullReport error", e);
+      alert("Ошибка оплаты 😕");
+    } finally {
+      setPaying(false);
     }
   }
 
@@ -470,7 +523,7 @@ ${list(howToTalk)}${extra}
   }
 
   async function share() {
-    const text = shareText();
+    const text = shareText(paidFull);
 
     try {
       await navigator.clipboard.writeText(text);
@@ -500,19 +553,11 @@ ${list(howToTalk)}${extra}
   return (
     <div style={shellStyle}>
       <AmbientBackground />
-
       <Header progress={stage === "test" ? progress : undefined} />
 
       {stage === "start" && (
         <GlassCard>
-          <h1
-            style={{
-              marginTop: 0,
-              marginBottom: 10,
-              fontSize: 22,
-              letterSpacing: 0.2,
-            }}
-          >
+          <h1 style={{ marginTop: 0, marginBottom: 10, fontSize: 22, letterSpacing: 0.2 }}>
             Тест по психотипам (4 цвета)
           </h1>
 
@@ -521,136 +566,19 @@ ${list(howToTalk)}${extra}
             0 (не про меня) … 3 (точно про меня).
           </p>
 
-          <div
-            style={{
-              marginTop: 14,
-              display: "grid",
-              gap: 10,
-              fontSize: 14,
-            }}
-          >
-            <GlassDisclosure
-              title="🔴 Красный — результат, скорость, лидерство"
-              body={
-                <>
-                  <p style={p0}>Кто это: лидер, драйвер, человек действия.</p>
-                  <div style={h}>Сильные стороны:</div>
-                  <ul style={ul}>
-                    <li style={li}>быстро принимает решения</li>
-                    <li style={li}>не боится ответственности</li>
-                    <li style={li}>нацелен на результат</li>
-                    <li style={li}>умеет давить и ускорять</li>
-                  </ul>
-                  <p style={p1}>
-                    <b>Мотивация:</b> победа, влияние, достижение целей.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> медлительность, слабость, неопределённость.
-                  </p>
-                </>
-              }
-            />
-
-            <GlassDisclosure
-              title="🟡 Жёлтый — энергия, идеи, общение"
-              body={
-                <>
-                  <p style={p0}>
-                    Кто это: вдохновитель, генератор идей, коммуникатор.
-                  </p>
-                  <div style={h}>Сильные стороны:</div>
-                  <ul style={ul}>
-                    <li style={li}>харизма</li>
-                    <li style={li}>лёгкость в общении</li>
-                    <li style={li}>креатив</li>
-                    <li style={li}>умеет зажигать людей</li>
-                  </ul>
-                  <p style={p1}>
-                    <b>Мотивация:</b> признание, свобода, эмоции.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> рутина, жёсткие рамки, критика без
-                    поддержки.
-                  </p>
-                </>
-              }
-            />
-
-            <GlassDisclosure
-              title="🟢 Зелёный — стабильность, поддержка, команда"
-              body={
-                <>
-                  <p style={p0}>Кто это: командный игрок, дипломат, опора.</p>
-                  <div style={h}>Сильные стороны:</div>
-                  <ul style={ul}>
-                    <li style={li}>терпение</li>
-                    <li style={li}>надёжность</li>
-                    <li style={li}>эмпатия</li>
-                    <li style={li}>умеет слушать</li>
-                  </ul>
-                  <p style={p1}>
-                    <b>Мотивация:</b> гармония, безопасность, стабильность.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> конфликты, давление, резкие изменения.
-                  </p>
-                </>
-              }
-            />
-
-            <GlassDisclosure
-              title="🔵 Синий — логика, анализ, системность"
-              body={
-                <>
-                  <p style={p0}>
-                    Кто это: аналитик, стратег, системный мыслитель.
-                  </p>
-                  <div style={h}>Сильные стороны:</div>
-                  <ul style={ul}>
-                    <li style={li}>внимание к деталям</li>
-                    <li style={li}>логика</li>
-                    <li style={li}>структурность</li>
-                    <li style={li}>высокий стандарт качества</li>
-                  </ul>
-                  <p style={p1}>
-                    <b>Мотивация:</b> точность, факты, компетентность.
-                  </p>
-                  <p style={p1}>
-                    <b>Триггеры:</b> хаос, поверхностность, эмоциональное
-                    давление.
-                  </p>
-                </>
-              }
-            />
-          </div>
-
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
             <GlassButton onClick={start}>Начать тест</GlassButton>
 
             {Object.keys(answers).length > 0 && (
-              <GlassButton onClick={() => setStage("test")}>
-                Продолжить
-              </GlassButton>
+              <GlassButton onClick={() => setStage("test")}>Продолжить</GlassButton>
             )}
-          </div>
-
-          <div style={{ marginTop: 12, opacity: 0.65, fontSize: 12 }}>
-            * Упрощённая модель (DISC-подобная). Результат — подсказка, не
-            диагноз.
           </div>
         </GlassCard>
       )}
 
       {stage === "test" && (
         <GlassCard>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "baseline",
-              gap: 12,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
             <div style={{ fontSize: 13, opacity: 0.75 }}>
               Вопрос {index + 1} / {MAX_Q}
             </div>
@@ -659,80 +587,44 @@ ${list(howToTalk)}${extra}
             </div>
           </div>
 
-          <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>
-            {q.text}
-          </div>
+          <div style={{ marginTop: 12, fontSize: 18, lineHeight: 1.35 }}>{q.text}</div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 10,
-              marginTop: 16,
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 16 }}>
             <AnswerButton active={selected === 0} onClick={() => setAnswer(0)}>
               0
-              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>
-                не про меня
-              </span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>не про меня</span>
             </AnswerButton>
             <AnswerButton active={selected === 1} onClick={() => setAnswer(1)}>
               1
-              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>
-                иногда
-              </span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>иногда</span>
             </AnswerButton>
             <AnswerButton active={selected === 2} onClick={() => setAnswer(2)}>
               2
-              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>
-                часто
-              </span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>часто</span>
             </AnswerButton>
             <AnswerButton active={selected === 3} onClick={() => setAnswer(3)}>
               3
-              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>
-                это я
-              </span>
+              <span style={{ display: "block", fontSize: 12, opacity: 0.72 }}>это я</span>
             </AnswerButton>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 16,
-              flexWrap: "wrap",
-            }}
-          >
+          <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
             <GlassButton onClick={reset}>Начать сначала</GlassButton>
 
             <div style={{ flex: 1 }} />
 
             <div style={{ display: "flex", gap: 10 }}>
-              <GlassButton disabled={!canPrev} onClick={prev}>
-                Назад
-              </GlassButton>
-              <GlassButton disabled={!canNext} onClick={next}>
-                Вперёд
-              </GlassButton>
-              {isComplete && (
-                <GlassButton onClick={finish}>Результат</GlassButton>
-              )}
+              <GlassButton disabled={!canPrev} onClick={prev}>Назад</GlassButton>
+              <GlassButton disabled={!canNext} onClick={next}>Вперёд</GlassButton>
+              {isComplete && <GlassButton onClick={finish}>Результат</GlassButton>}
             </div>
-          </div>
-
-          <div style={{ marginTop: 10, opacity: 0.7, fontSize: 12 }}>
-            Совет: отвечай быстро, как чувствуешь.
           </div>
         </GlassCard>
       )}
 
       {stage === "result" && (
         <GlassCard>
-          <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>
-            Результат
-          </h2>
+          <h2 style={{ marginTop: 0, marginBottom: 8, fontSize: 22 }}>Результат</h2>
 
           <ScoreRow color="red" value={scores.red} />
           <ScoreRow color="yellow" value={scores.yellow} />
@@ -741,15 +633,34 @@ ${list(howToTalk)}${extra}
 
           <div style={{ marginTop: 14 }}>
             <GlassInset>
-              <TopSummary ranked={ranked} />
+              <TopSummary ranked={ranked} paidFull={paidFull} />
             </GlassInset>
           </div>
 
+          {!paidFull && (
+            <div style={{ marginTop: 14 }}>
+              <GlassInset>
+                <div style={{ fontWeight: 900, marginBottom: 8 }}>
+                  🔒 Полный отчёт (⭐)
+                </div>
+                <div style={{ opacity: 0.9, lineHeight: 1.45 }}>
+                  После оплаты откроются разделы: <b>Отношения</b>, <b>Алкоголь</b>, <b>Работа</b>, <b>Бизнес</b>, <b>Сексуальная жизнь</b>.
+                </div>
+
+                <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+                  <GlassButton onClick={payFullReport} disabled={paying}>
+                    {paying
+                      ? "Открываю оплату…"
+                      : `⭐ Открыть полный отчёт${starsPrice ? ` за ${starsPrice}` : ""}`}
+                  </GlassButton>
+                </div>
+              </GlassInset>
+            </div>
+          )}
+
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
             <GlassButton onClick={share}>Поделиться (скопировать)</GlassButton>
-            <GlassButton onClick={() => setStage("test")}>
-              Вернуться к вопросам
-            </GlassButton>
+            <GlassButton onClick={() => setStage("test")}>Вернуться к вопросам</GlassButton>
             <GlassButton onClick={reset}>Пройти заново</GlassButton>
           </div>
         </GlassCard>
@@ -758,27 +669,13 @@ ${list(howToTalk)}${extra}
   );
 }
 
-/* ---------- текстовые стили ---------- */
-const p0: React.CSSProperties = {
-  margin: "10px 0 0",
-  opacity: 0.88,
-  lineHeight: 1.45,
-};
-const p1: React.CSSProperties = {
-  margin: "10px 0 0",
-  opacity: 0.88,
-  lineHeight: 1.45,
-};
-const h: React.CSSProperties = { marginTop: 10, fontWeight: 800, opacity: 0.95 };
-const ul: React.CSSProperties = {
-  margin: "6px 0 0 18px",
-  padding: 0,
-  lineHeight: 1.35,
-  opacity: 0.95,
-};
-const li: React.CSSProperties = { marginTop: 4 };
+/* ---------- UI bits ---------- */
 
-/* ===================== фон ===================== */
+const p0: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
+const p1: React.CSSProperties = { margin: "10px 0 0", opacity: 0.88, lineHeight: 1.45 };
+const h: React.CSSProperties = { marginTop: 10, fontWeight: 800, opacity: 0.95 };
+const ul: React.CSSProperties = { margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, opacity: 0.95 };
+const li: React.CSSProperties = { marginTop: 4 };
 
 function AmbientBackground() {
   return (
@@ -797,8 +694,6 @@ function AmbientBackground() {
     />
   );
 }
-
-/* ===================== SOLID UI ===================== */
 
 function GlassCard({ children }: { children: React.ReactNode }) {
   return (
@@ -855,9 +750,7 @@ function GlassButton({
       style={{
         borderRadius: 18,
         padding: "12px 14px",
-        backgroundColor: disabled
-          ? "rgba(60,70,90,0.6)"
-          : "rgba(42,50,70,0.98)",
+        backgroundColor: disabled ? "rgba(60,70,90,0.6)" : "rgba(42,50,70,0.98)",
         border: "1px solid rgba(255,255,255,0.22)",
         color: "rgba(255,255,255,0.95)",
         cursor: disabled ? "not-allowed" : "pointer",
@@ -893,18 +786,12 @@ function AnswerButton({
       style={{
         borderRadius: 18,
         padding: 12,
-        backgroundColor: active
-          ? "rgba(64,76,104,0.98)"
-          : "rgba(42,50,70,0.98)",
-        border: active
-          ? "1px solid rgba(255,255,255,0.40)"
-          : "1px solid rgba(255,255,255,0.22)",
+        backgroundColor: active ? "rgba(64,76,104,0.98)" : "rgba(42,50,70,0.98)",
+        border: active ? "1px solid rgba(255,255,255,0.40)" : "1px solid rgba(255,255,255,0.22)",
         color: "rgba(255,255,255,0.95)",
         cursor: "pointer",
         textAlign: "center",
-        boxShadow: active
-          ? "0 10px 24px rgba(0,0,0,0.28)"
-          : "0 6px 16px rgba(0,0,0,0.18)",
+        boxShadow: active ? "0 10px 24px rgba(0,0,0,0.28)" : "0 6px 16px rgba(0,0,0,0.18)",
         WebkitTapHighlightColor: "transparent",
         appearance: "none",
         WebkitAppearance: "none",
@@ -914,71 +801,6 @@ function AnswerButton({
     >
       {children}
     </button>
-  );
-}
-
-function GlassDisclosure({
-  title,
-  body,
-}: {
-  title: string;
-  body: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div
-      style={{
-        borderRadius: 16,
-        backgroundColor: "rgba(42,50,70,0.98)",
-        border: "1px solid rgba(255,255,255,0.18)",
-        boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
-        overflow: "hidden",
-        backdropFilter: "none",
-        WebkitBackdropFilter: "none",
-      }}
-    >
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          width: "100%",
-          textAlign: "left",
-          cursor: "pointer",
-          padding: "10px 12px",
-          userSelect: "none",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          color: "rgba(255,255,255,0.95)",
-          fontWeight: 800,
-          background: "transparent",
-          border: "none",
-          WebkitTapHighlightColor: "transparent",
-          appearance: "none",
-          WebkitAppearance: "none",
-        }}
-      >
-        <span>{title}</span>
-        <span
-          style={{
-            opacity: 0.85,
-            fontWeight: 900,
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 180ms ease",
-          }}
-        >
-          ⌄
-        </span>
-      </button>
-
-      {open && (
-        <div style={{ padding: "0 12px 12px", color: "rgba(255,255,255,0.92)" }}>
-          {body}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -1018,13 +840,7 @@ function ScoreRow({ color, value }: { color: Color; value: number }) {
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <div style={{ fontWeight: 800, color: "rgba(255,255,255,0.92)" }}>
           {colorEmoji(color)} {colorLabel(color)}
         </div>
@@ -1056,7 +872,13 @@ function ScoreRow({ color, value }: { color: Color; value: number }) {
   );
 }
 
-function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
+function TopSummary({
+  ranked,
+  paidFull,
+}: {
+  ranked: { color: Color; value: number }[];
+  paidFull: boolean;
+}) {
   const top1 = ranked[0];
   const top2 = ranked[1];
 
@@ -1086,31 +908,29 @@ function TopSummary({ ranked }: { ranked: { color: Color; value: number }[] }) {
       </div>
 
       <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-        <TipBlock
-          title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`}
-          items={t1.strengths}
-        />
-        <TipBlock
-          title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`}
-          items={t2.strengths}
-        />
+        <TipBlock title={`${colorEmoji(top1.color)} ${colorLabel(top1.color)} — сильные стороны`} items={t1.strengths} />
+        <TipBlock title={`${colorEmoji(top2.color)} ${colorLabel(top2.color)} — сильные стороны`} items={t2.strengths} />
         <TipBlock title="Триггеры" items={[...t1.triggers, ...t2.triggers].slice(0, 3)} />
         <TipBlock title="Как с тобой общаться" items={[...t1.howToTalk, ...t2.howToTalk].slice(0, 4)} />
 
-        <TipBlock title={`💞 Отношения — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={r1} />
-        <TipBlock title={`💞 Отношения — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={r2} />
+        {paidFull && (
+          <>
+            <TipBlock title={`💞 Отношения — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={r1} />
+            <TipBlock title={`💞 Отношения — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={r2} />
 
-        <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={a1} />
-        <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={a2} />
+            <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={a1} />
+            <TipBlock title={`🍷 Алкоголь — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={a2} />
 
-        <TipBlock title={`💼 Работа — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={w1} />
-        <TipBlock title={`💼 Работа — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={w2} />
+            <TipBlock title={`💼 Работа — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={w1} />
+            <TipBlock title={`💼 Работа — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={w2} />
 
-        <TipBlock title={`📈 Бизнес — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={b1} />
-        <TipBlock title={`📈 Бизнес — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={b2} />
+            <TipBlock title={`📈 Бизнес — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={b1} />
+            <TipBlock title={`📈 Бизнес — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={b2} />
 
-        <TipBlock title={`🔥 Сексуальная жизнь — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={s1} />
-        <TipBlock title={`🔥 Сексуальная жизнь — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={s2} />
+            <TipBlock title={`🔥 Сексуальная жизнь — ${colorEmoji(top1.color)} ${colorLabel(top1.color)}`} items={s1} />
+            <TipBlock title={`🔥 Сексуальная жизнь — ${colorEmoji(top2.color)} ${colorLabel(top2.color)}`} items={s2} />
+          </>
+        )}
       </div>
     </div>
   );
@@ -1122,14 +942,7 @@ function TipBlock({ title, items }: { title: string; items: string[] }) {
       <div style={{ fontSize: 13, opacity: 0.9, fontWeight: 800, color: "rgba(255,255,255,0.95)" }}>
         {title}
       </div>
-      <ul
-        style={{
-          margin: "6px 0 0 18px",
-          padding: 0,
-          lineHeight: 1.35,
-          color: "rgba(255,255,255,0.92)",
-        }}
-      >
+      <ul style={{ margin: "6px 0 0 18px", padding: 0, lineHeight: 1.35, color: "rgba(255,255,255,0.92)" }}>
         {items.map((x) => (
           <li key={x} style={{ marginTop: 4 }}>
             {x}
