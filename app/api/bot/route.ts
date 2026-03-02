@@ -4,17 +4,20 @@ export const runtime = "nodejs";
 
 type TgUpdate = {
   update_id: number;
+
   message?: {
     message_id: number;
     text?: string;
     chat: { id: number };
-    from?: {
-      id: number;
-      username?: string;
-      first_name?: string;
-      last_name?: string;
-      language_code?: string;
-    };
+    successful_payment?: any;
+  };
+
+  pre_checkout_query?: {
+    id: string;
+    from: { id: number };
+    currency: string;
+    total_amount: number;
+    invoice_payload: string;
   };
 };
 
@@ -56,42 +59,6 @@ function startKeyboard(appUrl: string) {
   };
 }
 
-function formatUser(from?: TgUpdate["message"]["from"]) {
-  if (!from) {
-    return `👤 Новый пользователь (/start):
-ID: unknown
-Логин: без username
-Имя: не указано`;
-  }
-
-  const username = from.username ? `@${from.username}` : "без username";
-  const fullName =
-    [from.first_name, from.last_name].filter(Boolean).join(" ").trim() || "не указано";
-
-  return `👤 Новый пользователь (/start):
-ID: ${from.id}
-Логин: ${username}
-Имя: ${fullName}
-Язык: ${from.language_code || "—"}`;
-}
-
-/**
- * Telegram может прислать один и тот же update повторно.
- * Делаем лёгкую дедупликацию в памяти (работает в рамках одного инстанса).
- * Для Vercel это не 100% глобально, но очень часто убирает тройные сообщения.
- */
-const seen = new Set<number>();
-function isDuplicate(updateId: number) {
-  if (seen.has(updateId)) return true;
-  seen.add(updateId);
-  // чистим память
-  if (seen.size > 5000) {
-    const arr = Array.from(seen);
-    for (let i = 0; i < 2000; i++) seen.delete(arr[i]);
-  }
-  return false;
-}
-
 export async function POST(req: Request) {
   let update: TgUpdate | null = null;
 
@@ -102,24 +69,43 @@ export async function POST(req: Request) {
   }
 
   try {
+    // 1) ✅ Stars payment: обязательно отвечаем на pre_checkout_query
+    if (update?.pre_checkout_query) {
+      const q = update.pre_checkout_query;
+
+      // если хочешь — можешь проверять payload/currency
+      const ok = true;
+
+      await tgCall("answerPreCheckoutQuery", {
+        pre_checkout_query_id: q.id,
+        ok,
+      });
+
+      return NextResponse.json({ ok: true });
+    }
+
+    const appUrl = getEnv("APP_URL");
     const msg = update?.message;
     const text = msg?.text || "";
     const chatId = msg?.chat?.id;
-    const updateId = update?.update_id;
 
-    if (!chatId || !updateId) return NextResponse.json({ ok: true });
+    if (!chatId) return NextResponse.json({ ok: true });
 
-    // ✅ Дедуп: если прилетел повтор — молча игнорим
-    if (isDuplicate(updateId)) return NextResponse.json({ ok: true });
+    // 2) (опционально) лог успешной оплаты
+    if (msg?.successful_payment) {
+      await tgCall("sendMessage", {
+        chat_id: chatId,
+        text: "✅ Оплата получена! Возвращайся в приложение — полный отчёт уже доступен.",
+      });
 
-    // /start (и /start payload)
+      return NextResponse.json({ ok: true });
+    }
+
+    // 3) /start
     if (text.startsWith("/start")) {
-      const appUrl = getEnv("APP_URL"); // https://xxxx.vercel.app
-      const ownerChatId = process.env.OWNER_CHAT_ID; // куда слать тебе
       const caption =
         "Привет! 👋\n\nЭто тест DISC Colors.\nНажми кнопку ниже — открою тест ✅\n\n(Откроется в режиме WebApp)";
 
-      // 1) Сообщение пользователю (картинка опционально)
       const photoUrl = process.env.START_PHOTO_URL;
 
       if (photoUrl) {
@@ -137,21 +123,9 @@ export async function POST(req: Request) {
         });
       }
 
-      // 2) Сообщение ТЕБЕ о новом пользователе
-      if (ownerChatId) {
-        await tgCall("sendMessage", {
-          chat_id: ownerChatId,
-          text: formatUser(msg?.from),
-          disable_web_page_preview: true,
-        });
-      } else {
-        console.warn("OWNER_CHAT_ID is not set — skip owner notify for /start");
-      }
-
       return NextResponse.json({ ok: true });
     }
 
-    // Остальные сообщения игнорим
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("bot webhook error:", e);
