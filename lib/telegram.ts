@@ -6,8 +6,8 @@ export type TelegramWebApp = {
   requestFullscreen?: () => void;
   disableVerticalSwipes?: () => void;
 
-  // ✅ Stars invoice
-  openInvoice?: (url: string, cb?: (status: "paid" | "cancelled" | "failed" | "pending") => void) => void;
+  // ✅ оплаты/инвойсы
+  openInvoice?: (url: string, cb: (status: string) => void) => void;
 
   MainButton?: {
     setText: (t: string) => void;
